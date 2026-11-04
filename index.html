@@ -496,9 +496,9 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
   <div class="sh-h"><h3 id="oTitle">Новый перевод</h3><button class="x" data-close aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
   <button class="drop" id="oDrop" type="button">
     <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
-    <span><b>Загрузить квитанцию</b><span id="oDropHint">Скрин из банка. Карта, сумма и дата заполнятся сами</span></span>
+    <span><b>Загрузить квитанцию</b><span id="oDropHint">Скрин или PDF из банка. Карта, сумма и дата заполнятся сами</span></span>
   </button>
-  <input type="file" id="oFile" accept="image/*" multiple hidden>
+  <input type="file" id="oFile" accept="image/*,application/pdf,.pdf" multiple hidden>
   <div class="ocr" id="oOcr" hidden>
     <img id="oImg" alt="Квитанция">
     <div class="mid">
@@ -596,6 +596,8 @@ var OWNER = (CFG.ownerEmail || '').trim().toLowerCase();
 var ME = CFG.ownerName || 'Я';
 var FB_VER = '10.12.2';
 var TESS = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+var PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+var PDFJS_W = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 var REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ============ утилиты ============ */
@@ -1218,9 +1220,46 @@ function getWorker(){
   }).then(function(w){ tessWorker = w; return w; }).catch(function(e){ tessP = null; throw e; });
   return tessP;
 }
+function isPdf(f){ return f && (f.type === 'application/pdf' || /\.pdf$/i.test(f.name || '')); }
+function isReceiptFile(f){ return f && (/^image\//.test(f.type) || isPdf(f)); }
+/* PDF: берём текст прямо из файла; если текста нет (скан) — рисуем 1-ю страницу и распознаём */
+var pdfP = null;
+function getPdf(){
+  if (pdfP) return pdfP;
+  pdfP = (window.pdfjsLib ? Promise.resolve() : loadScript(PDFJS)).then(function(){ pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_W; return pdfjsLib; }).catch(function(e){ pdfP = null; throw e; });
+  return pdfP;
+}
+function readPdf(f){
+  return Promise.all([getPdf(), f.arrayBuffer()]).then(function(r){
+    return r[0].getDocument({data:new Uint8Array(r[1])}).promise;
+  }).then(function(doc){
+    var pages = [], n = Math.min(doc.numPages, 3);
+    for (var i = 1; i <= n; i++) pages.push(doc.getPage(i));
+    return Promise.all(pages).then(function(ps){
+      return Promise.all(ps.map(function(pg){ return pg.getTextContent(); })).then(function(tcs){
+        var text = tcs.map(function(tc){
+          var rows = [];
+          tc.items.forEach(function(it){
+            if (!it.str || !it.str.trim()) return;
+            var y = Math.round(it.transform[5]), x = it.transform[4], row = null;
+            for (var k = 0; k < rows.length; k++) if (Math.abs(rows[k].y - y) <= 3){ row = rows[k]; break; }
+            if (!row){ row = {y:y, items:[]}; rows.push(row); }
+            row.items.push({x:x, s:it.str});
+          });
+          rows.sort(function(a, b){ return b.y - a.y; });
+          return rows.map(function(r){ return r.items.sort(function(a, b){ return a.x - b.x; }).map(function(i){ return i.s; }).join(' '); }).join('\n');
+        }).join('\n');
+        // картинка первой страницы: для превью и на случай скана
+        var vp = ps[0].getViewport({scale:2}), cv = document.createElement('canvas');
+        cv.width = vp.width; cv.height = vp.height;
+        return ps[0].render({canvasContext:cv.getContext('2d'), viewport:vp}).promise.then(function(){ return {text:text, canvas:cv}; });
+      });
+    });
+  });
+}
 function startReceipts(files, inSheet){
-  files = files.filter(function(f){ return /^image\//.test(f.type); });
-  if (!files.length){ toast('Нужна картинка: скрин или фото квитанции'); return; }
+  files = files.filter(isReceiptFile);
+  if (!files.length){ toast('Нужна картинка или PDF квитанции'); return; }
   if (!S.cards.length){ toast('Сначала добавь карты'); return; }
   OQ = files.slice();
   if (!openSh || openSh.id !== 'sOp') openOp(null);
@@ -1232,16 +1271,20 @@ function nextReceipt(){
   $('#oTitle').textContent = 'Квитанция';
   $('#oDrop').hidden = true; $('#oOcr').hidden = false; $('#oSkip').hidden = OQ.length === 0;
   $('#oQueue').textContent = OQ.length ? 'Ещё в очереди: ' + OQ.length : '';
-  var url = URL.createObjectURL(f); $('#oImg').src = url;
-  setOcr('', 'Читаю квитанцию…', 'Первый раз может занять до минуты.', 2);
+  var url = isPdf(f) ? '' : URL.createObjectURL(f); $('#oImg').src = url || 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
+  setOcr('', 'Читаю квитанцию…', isPdf(f) ? 'PDF из банка читается быстро.' : 'Первый раз может занять до минуты.', 2);
   tessProgress = function(m){
     var st = m.status || '', p = m.progress || 0;
     var w = /recogn/.test(st) ? 35 + p * 65 : /load|init/.test(st) ? 5 + p * 30 : 5;
     $('#oProg i').style.width = Math.round(w) + '%';
   };
-  getWorker().then(function(w){ return w.recognize(f); }).then(function(r){
-    URL.revokeObjectURL(url);
-    applyParsed(parseReceipt(r && r.data ? r.data.text : ''));
+  var job = isPdf(f) ? readPdf(f).then(function(r){
+      try { $('#oImg').src = r.canvas.toDataURL('image/jpeg', .7); } catch(e){}
+      if (r.text.replace(/\s/g, '').length > 40) return r.text;
+      return getWorker().then(function(w){ return w.recognize(r.canvas); }).then(function(x){ return x && x.data ? x.data.text : ''; });
+    }) : getWorker().then(function(w){ return w.recognize(f); }).then(function(r){ if (url) URL.revokeObjectURL(url); return r && r.data ? r.data.text : ''; });
+  job.then(function(text){
+    applyParsed(parseReceipt(text));
   }).catch(function(e){
     console.error(e);
     setOcr('err', 'Не получилось прочитать', 'Проверь интернет при первом запуске или заполни вручную.', 0);
@@ -1346,7 +1389,7 @@ function applyParsed(p){
 document.addEventListener('paste', function(e){
   if (!shown) return;
   var items = (e.clipboardData && e.clipboardData.items) || [], files = [];
-  for (var i = 0; i < items.length; i++) if (items[i].kind === 'file' && /^image\//.test(items[i].type)){ var f = items[i].getAsFile(); if (f) files.push(f); }
+  for (var i = 0; i < items.length; i++) if (items[i].kind === 'file' && (/^image\//.test(items[i].type) || items[i].type === 'application/pdf')){ var f = items[i].getAsFile(); if (f) files.push(f); }
   if (files.length){ e.preventDefault(); startReceipts(files); }
 });
 var dragN = 0;
@@ -1456,7 +1499,7 @@ function takeShared(){
   try { history.replaceState(null, '', location.pathname); } catch(e){}
   caches.open('share-inbox').then(function(c){
     return c.keys().then(function(keys){
-      return Promise.all(keys.map(function(k){ return c.match(k).then(function(r){ return r.blob().then(function(b){ c.delete(k); return new File([b], 'receipt.png', {type:b.type || 'image/png'}); }); }); }));
+      return Promise.all(keys.map(function(k){ return c.match(k).then(function(r){ var nm = decodeURIComponent(r.headers.get('x-name') || '') || (/pdf/.test(r.headers.get('content-type') || '') ? 'receipt.pdf' : 'receipt.png'); return r.blob().then(function(b){ c.delete(k); return new File([b], nm, {type:b.type || 'image/png'}); }); }); }));
     });
   }).then(function(files){ if (files.length) startReceipts(files); }).catch(function(e){ console.error(e); });
 }
