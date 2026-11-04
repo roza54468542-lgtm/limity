@@ -468,6 +468,48 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
 .tbl .who .bk{margin-bottom:3px}
 .oc .t1 .bk{margin-right:6px;vertical-align:1px}
 
+/* ---------- счета ФОП ---------- */
+.fops{display:flex;flex-direction:column;gap:10px}
+.fop{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:var(--r-lg);padding:14px 14px 14px 16px;width:100%;text-align:left;position:relative;overflow:hidden;transition:transform .15s var(--ease)}
+.fop:active{transform:scale(.985)}
+.fop::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+.fop .mid{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.fop .t1{font-weight:700;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fop .t2{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fop .ci{display:grid;place-items:center;width:40px;height:40px;border-radius:var(--r-md);background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);flex:none}
+.fop .ci svg{width:19px;height:19px}
+.fop .bk{align-self:flex-start}
+.kved{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:var(--r-md);background:var(--surface-2);text-align:left;width:100%;transition:background .2s,transform .12s}
+.kved:active{transform:scale(.985)}
+.kved b{font-size:14.5px}
+.kved span{font-size:13px;color:var(--muted);line-height:1.4}
+.kved.done{background:color-mix(in srgb,var(--ok) 20%,var(--surface-2))}
+.fpre{white-space:pre-wrap;font:500 13px/1.45 var(--f-mono);background:var(--surface-2);border-radius:var(--r-md);padding:12px;margin:0;color:var(--ink);word-break:break-word}
+.prow{display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:var(--r-md);background:var(--surface-2)}
+.prow .field{background:var(--surface)}
+.prow textarea{width:100%;min-height:64px;resize:vertical;border:0;outline:0;background:var(--surface);color:var(--ink);font:inherit;font-size:14px;line-height:1.4;padding:10px 12px;border-radius:var(--r-sm)}
+.prow .rm{align-self:flex-end;color:var(--danger);font-size:13px;font-weight:700;padding:4px 2px}
+.minis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+
+/* ---------- свои цвета ---------- */
+.cpick{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.cpick:last-child{border-bottom:0}
+.cpick>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.cpick .cc{display:flex;gap:8px;align-items:center;flex:none}
+.cpick label{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;color:var(--muted);font-weight:600}
+.cpick input[type=color]{-webkit-appearance:none;appearance:none;width:38px;height:30px;border:0;padding:0;border-radius:8px;background:none;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(127,127,127,.35)}
+.cpick input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+.cpick input[type=color]::-webkit-color-swatch{border:0;border-radius:8px}
+.cpick input[type=color]::-moz-color-swatch{border:0;border-radius:8px}
+.cpick .rs{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--muted);background:var(--surface-2)}
+.cpick .rs svg{width:15px;height:15px}
+.scale{height:12px;border-radius:99px;margin:4px 0 6px}
+:root[data-theme="custom"] .hero{background:var(--c-hero);color:var(--c-hero-ink)}
+:root[data-theme="custom"] .fab,:root[data-theme="custom"] .btn{background:var(--c-btn);color:var(--c-btn-ink)}
+:root[data-theme="custom"] .btn.ghost{background:var(--surface-2);color:var(--ink)}
+:root[data-theme="custom"] .btn.danger{background:transparent;color:var(--danger)}
+:root[data-theme="custom"] .chip[aria-pressed="true"]{background:var(--accent);color:var(--c-acc-ink)}
+
 /* ---------- формы (не цвет) ---------- */
 .shapes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .shp{display:flex;flex-direction:column;gap:7px;align-items:stretch;font-size:12.5px;font-weight:600;color:var(--muted);text-align:center}
@@ -670,6 +712,35 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
   <button class="btn danger" id="cDel" type="button" hidden>Удалить карту</button>
 </section>
 
+<!-- ФОП: выбор назначения -->
+<section class="sheet" id="sFop" role="dialog" aria-modal="true" aria-labelledby="fTitle">
+  <div class="grab"></div>
+  <div class="sh-h"><h3 id="fTitle">ФОП</h3><button class="x" data-close aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="fl">Выбери назначение — скопирую всё одним сообщением</div>
+  <div class="stack" id="fList"></div>
+  <div class="fl" style="margin-top:4px">Как будет выглядеть</div>
+  <pre class="fpre" id="fPre"></pre>
+  <div class="minis"><button class="btn ghost sm" id="fIban" type="button">IBAN</button><button class="btn ghost sm" id="fCode" type="button">ЄДРПОУ</button><button class="btn ghost sm" id="fEdit" type="button">Изменить</button></div>
+</section>
+
+<!-- ФОП: редактирование -->
+<section class="sheet" id="sFopEd" role="dialog" aria-modal="true" aria-labelledby="feTitle">
+  <div class="grab"></div>
+  <div class="sh-h"><h3 id="feTitle">Счёт ФОП</h3><button class="x" data-close aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="grid2">
+    <div class="col"><div class="fl">Чей ФОП</div><label class="field"><input id="feOwner" type="text" maxlength="30" list="dlHolders" placeholder="Артём" autocomplete="off"></label></div>
+    <div class="col"><div class="fl">Банк</div><label class="field"><input id="feBank" type="text" maxlength="30" list="dlBanks" placeholder="Монобанк" autocomplete="off"></label></div>
+  </div>
+  <div class="col"><div class="fl">Получатель (как в платеже)</div><label class="field"><input id="feName" type="text" maxlength="120" placeholder="ФОП Прізвище Ім'я По батькові" autocomplete="off"></label></div>
+  <div class="col"><div class="fl">IBAN</div><label class="field"><input id="feIban" class="mono" type="text" maxlength="40" placeholder="UA00 0000 0000 0000 0000 0000 0000 0" autocomplete="off" autocapitalize="characters"></label></div>
+  <div class="col"><div class="fl">ЄДРПОУ / ІПН</div><label class="field"><input id="feCode" class="mono" type="text" inputmode="numeric" maxlength="10" placeholder="10 цифр" autocomplete="off"></label></div>
+  <div class="fl" style="margin-top:4px">Назначения платежа (КВЕДы)</div>
+  <div class="stack" id="fePurp"></div>
+  <button class="btn ghost sm" id="feAddP" type="button">Добавить назначение</button>
+  <button class="btn" id="feSave" type="button">Сохранить</button>
+  <button class="btn danger" id="feDel" type="button" hidden>Удалить счёт ФОП</button>
+</section>
+
 <!-- Одно число -->
 <section class="sheet" id="sNum" role="dialog" aria-modal="true" aria-labelledby="nTitle">
   <div class="grab"></div>
@@ -787,7 +858,13 @@ var BANKS = [
   [/sport|спорт/i, '#FF5A1F', '#FFFFFF'],
   [/монобанк/i, '#0F0F10', '#FFFFFF']
 ];
+function bankKey(name){ return String(name || '').trim().toLowerCase(); }
 function bankColors(name){
+  var bc = (S && S.set && S.set.bankCol) || {}, cu = bc[bankKey(name)];
+  if (cu && cu.bg) return {bg:cu.bg, fg:cu.fg || inkFor(cu.bg)};
+  return bankDefault(name);
+}
+function bankDefault(name){
   name = String(name || '');
   for (var i = 0; i < BANKS.length; i++) if (BANKS[i][0].test(name)) return {bg:BANKS[i][1], fg:BANKS[i][2]};
   var h = 0; for (var j = 0; j < name.length; j++) h = (h * 31 + name.charCodeAt(j)) % 360;
@@ -795,8 +872,29 @@ function bankColors(name){
 }
 function bankBadge(name, size){ var b = bankColors(name); return '<span class="bk' + (size ? ' ' + size : '') + '" style="--bb:' + b.bg + ';--bf:' + b.fg + '">' + esc(name || 'Банк') + '</span>'; }
 
-/* цвет по проценту: 0% зелёный → 100% красный */
-function heat(p){ p = Math.max(0, Math.min(1, p)); return 'hsl(' + Math.round(140 - 140 * p) + ' 72% var(--gl))'; }
+/* яркость цвета → тёмный или светлый текст поверх */
+function hexRgb(h){ h = String(h || '').replace('#', ''); if (h.length === 3) h = h.replace(/./g, '$&$&'); var n = parseInt(h, 16); return isNaN(n) || h.length !== 6 ? null : [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function lum(h){ var c = hexRgb(h); if (!c) return 0.5; c = c.map(function(v){ v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; }
+function inkFor(bg){ return lum(bg) > .38 ? '#111111' : '#FFFFFF'; }
+function toHex(c){
+  if (/^#[0-9a-f]{6}$/i.test(c)) return c;
+  var m = /hsl\((\d+)\s+(\d+)%\s+(\d+)%\)/.exec(c || '');
+  if (m){ var h = +m[1] / 360, s = +m[2] / 100, l = +m[3] / 100, f = function(n){ var k = (n + h * 12) % 12, a = s * Math.min(l, 1 - l); return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))); };
+    return '#' + [f(0), f(8), f(4)].map(function(v){ return ('0' + v.toString(16)).slice(-2); }).join(''); }
+  if (/^#[0-9a-f]{3}$/i.test(c)) return '#' + c.slice(1).replace(/./g, '$&$&');
+  return '#777777';
+}
+
+/* цвет по проценту: 0% зелёный → 100% красный (или своя шкала) */
+function heat(p){
+  p = Math.max(0, Math.min(1, p));
+  var sc = PR.scale;
+  if (sc && sc.length === 3){
+    var a = p < .5 ? sc[0] : sc[1], b = p < .5 ? sc[1] : sc[2], t = Math.round((p < .5 ? p * 2 : (p - .5) * 2) * 100);
+    return 'color-mix(in oklab,' + b + ' ' + t + '%,' + a + ')';
+  }
+  return 'hsl(' + Math.round(140 - 140 * p) + ' 72% var(--gl))';
+}
 
 /* ============ состояние ============ */
 var PREF_KEY = 'limity-prefs';
@@ -814,11 +912,34 @@ var THEMES = [
   ['synth','Синтвейв','#140A26','linear-gradient(125deg,#FF4FB8,#7B3CFF)','#5CD6FF','#2E1A50'],
   ['graphite','Графит','#141517','#FF7A1A','#F1F1EE','#2A2C30'],
   ['sand','Песок','#F2ECE1','#3A2A20','#B4532A','#FBF8F2'],
-  ['arctic','Арктика','#E8F1F8','linear-gradient(135deg,#0F5FB0,#1C8FE8)','#139B78','#FFFFFF']
+  ['arctic','Арктика','#E8F1F8','linear-gradient(135deg,#0F5FB0,#1C8FE8)','#139B78','#FFFFFF'],
+  ['custom','Своя','var(--cb,#ddd)','var(--ch,#333)','var(--ca,#0a7)','var(--cs,#fff)']
 ];
+var CUSTOM_DEF = {bg:'#EEF0F5', surface:'#FFFFFF', ink:'#161A24', accent:'#6C4CF5', hero:'#2A1F5C', btn:'#6C4CF5'};
+var CUSTOM_F = [['bg','Фон'],['surface','Карточки'],['ink','Текст'],['accent','Акцент'],['hero','Верхний блок'],['btn','Кнопки и «+»']];
+var SCALE_DEF = ['#2BB673','#F2B33D','#E5484D'];
 var SHAPES = [['std','Стандарт'],['round','Округлый'],['soft','Мягкий'],['sharp','Угловатый'],['brutal','Брутализм'],['min','Минимализм']];
+var CUSTOM_VARS = ['--bg','--surface','--surface-2','--ink','--muted','--line','--accent','--info','--gl','--shadow','color-scheme','--c-hero','--c-hero-ink','--c-btn','--c-btn-ink','--c-acc-ink'];
+function applyCustom(on){
+  var st = document.documentElement.style;
+  CUSTOM_VARS.forEach(function(v){ st.removeProperty(v); });
+  if (!on) return;
+  var c = Object.assign({}, CUSTOM_DEF, PR.custom || {}), dark = lum(c.bg) < .25;
+  st.setProperty('--bg', c.bg); st.setProperty('--surface', c.surface); st.setProperty('--ink', c.ink);
+  st.setProperty('--surface-2', 'color-mix(in srgb,' + c.ink + ' ' + (dark ? 10 : 7) + '%,' + c.surface + ')');
+  st.setProperty('--muted', 'color-mix(in srgb,' + c.ink + ' 58%,' + c.bg + ')');
+  st.setProperty('--line', 'color-mix(in srgb,' + c.ink + ' 10%,transparent)');
+  st.setProperty('--accent', c.accent); st.setProperty('--info', c.accent);
+  st.setProperty('--gl', dark ? '58%' : '44%'); st.setProperty('color-scheme', dark ? 'dark' : 'light');
+  st.setProperty('--shadow', dark ? '0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25)' : '0 1px 2px rgba(0,0,0,.05),0 6px 20px rgba(0,0,0,.06)');
+  st.setProperty('--c-hero', c.hero); st.setProperty('--c-hero-ink', inkFor(c.hero));
+  st.setProperty('--c-btn', c.btn); st.setProperty('--c-btn-ink', inkFor(c.btn)); st.setProperty('--c-acc-ink', inkFor(c.accent));
+}
 function applyTheme(){
   var r = document.documentElement;
+  var cu = Object.assign({}, CUSTOM_DEF, PR.custom || {});
+  r.style.setProperty('--cb', cu.bg); r.style.setProperty('--ch', cu.hero); r.style.setProperty('--ca', cu.accent); r.style.setProperty('--cs', cu.surface);
+  applyCustom(PR.theme === 'custom');
   if (PR.shape && PR.shape !== 'std') r.setAttribute('data-shape', PR.shape); else r.removeAttribute('data-shape');
   if (!THEMES.some(function(t){ return t[0] === PR.theme; })) PR.theme = 'system';
   if (PR.theme === 'system') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', PR.theme);
@@ -1011,21 +1132,25 @@ function vPeople(){
       '<span class="sm2">На картах <b>' + (typeof p.bal === 'number' ? moneyS(p.bal) : '—') + '</b> · ушло <b>' + moneyS(p.out) + '</b> из ' + moneyS(p.lim) + '</span><span class="dots">' + dots + '</span></span>' +
       '<span class="right"><span class="big">' + (p.lim ? pctTxt(p.p) : '—') + '</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></span></button>';
   }).join('') + '</div>';
-  h += '<button class="btn ghost sm" data-act="newcard" style="max-width:320px">Добавить карту</button>';
+  var onlyF = {}; fops().forEach(function(f){ var o = (f.owner || '').trim(); if (o && !ps.some(function(p){ return p.name === o; })) onlyF[o] = (onlyF[o] || 0) + 1; });
+  Object.keys(onlyF).forEach(function(o){ h += '<button class="pp" data-person="' + esc(o) + '" style="--hc:var(--accent);margin-top:10px"><span class="av">' + esc(o.charAt(0).toUpperCase()) + '</span><span class="mid"><span class="nm"><b>' + esc(o) + '</b><span>' + onlyF[o] + ' ФОП</span></span><span class="sm2">Карт пока нет</span></span><span class="right"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></span></button>'; });
+  h += '<div class="grid2" style="max-width:520px"><button class="btn ghost sm" data-act="newcard">Добавить карту</button><button class="btn ghost sm" data-act="newfop">Добавить ФОП</button></div>';
   return h;
 }
 function vPerson(){
   var mine = S.cards.filter(function(c){ return holderOf(c) === S.person; });
-  if (!mine.length){ S.person = null; return vPeople(); }
+  var myF = fops().filter(function(f){ return (f.owner || '').trim() === S.person; });
+  if (!mine.length && !myF.length){ S.person = null; return vPeople(); }
   S.holder = S.person;
   var h = '<div class="crumb"><button class="iconbtn" data-act="back" aria-label="Ко всем людям">' + IC_L + '</button><span>Все люди</span></div>';
   h += heroHtml(mine, 'Отправлено за ');
   h += '<div class="filters"><div class="frow"><label class="field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg><input id="q" type="search" placeholder="Банк или цифры карты" value="' + esc(S.q) + '" autocomplete="off"></label>' +
     '<button class="sortb" data-act="sort" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg>' + {pct:'По %', left:'По остатку', holder:'По имени', adv:'По совету', out:'По сумме', lim:'По лимиту', in:'По получению', bank:'По банку', bal:'По балансу'}[PR.sort] + '</button></div></div>';
+  if (myF.length && !S.q.trim()) h += '<div class="sec"><span>Счета ФОП</span><span>' + myF.length + '</span></div><div class="fops">' + myF.map(fopTile).join('') + '</div><div class="sec"><span>Карты</span><span>' + mine.length + '</span></div>';
   var list = visibleCards();
-  if (!list.length) return h + '<section class="card"><div class="empty">Ничего не найдено.</div></section>';
-  h += cardsBlock(list);
-  h += '<button class="btn ghost sm" data-act="newcard" style="max-width:320px">Добавить карту: ' + esc(S.person) + '</button>';
+  if (!list.length) h += '<section class="card"><div class="empty">' + (mine.length ? 'Ничего не найдено.' : 'Карт пока нет.') + '</div></section>';
+  else h += cardsBlock(list);
+  h += '<div class="grid2" style="max-width:520px"><button class="btn ghost sm" data-act="newcard">Добавить карту</button><button class="btn ghost sm" data-act="newfop">Добавить ФОП</button></div>';
   return h;
 }
 function vCards(){ return S.person ? vPerson() : vPeople(); }
@@ -1111,6 +1236,7 @@ function vSettings(){
     THEMES.map(function(t){ return '<button class="th" data-th="' + t[0] + '" aria-pressed="' + (PR.theme === t[0]) + '"><span class="tv" style="--b:' + t[2] + ';--h:' + t[3] + ';--a:' + t[4] + ';--s:' + t[5] + '"><b></b><span><i></i><em></em></span></span>' + t[1] + '</button>'; }).join('') + '</div>' +
     '<div class="fl" style="margin:16px 0 10px">Форма</div><div class="shapes">' + SHAPES.map(function(s){ return '<button class="shp" data-sh="' + s[0] + '" aria-pressed="' + ((PR.shape || 'std') === s[0]) + '"><span class="pv"><b></b><i></i></span>' + s[1] + '</button>'; }).join('') + '</div>' +
     '<p class="note">Тема и форма выбираются отдельно. Например, «Джарвис» с «Угловатым» или «Брутал Ч/Б» с «Брутализмом».</p></section>';
+  h += colorsHtml();
   h += '<section class="card"><h2>Как считаются советы</h2>' +
     '<div class="kv"><span>' + advChip({t:'Поднажми', c:'var(--ok)'}) + '</span><b style="font-weight:500;color:var(--muted);text-align:right">отстаёшь от темпа месяца больше чем на 15%</b></div>' +
     '<div class="kv"><span>' + advChip({t:'В темпе', c:'var(--info)'}) + '</span><b style="font-weight:500;color:var(--muted);text-align:right">идёшь ровно</b></div>' +
@@ -1125,6 +1251,37 @@ function vSettings(){
   h += '<section class="card"><h2>База</h2><div class="kv"><span>Карт</span><b>' + S.cards.length + '</b></div><div class="kv"><span>Записей за год</span><b>' + S.ops.length + '</b></div>';
   if (DEMO) h += '<p class="note">Демо-режим: данные с примерами хранятся только на этом устройстве.</p><div class="stack" style="margin-top:10px"><button class="btn ghost sm" data-act="reset">Вернуть примеры</button></div></section>';
   else h += '<div class="kv"><span>Вход</span><b style="overflow:hidden;text-overflow:ellipsis;min-width:0">' + esc(S.email) + '</b></div><div class="stack" style="margin-top:10px"><button class="btn danger" data-act="logout">Выйти</button></div></section>';
+  return h;
+}
+
+var RS_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>';
+function bankNames(){
+  var seen = {}, out = [];
+  S.cards.map(function(c){ return c.bank; }).concat(fops().map(function(f){ return f.bank; })).forEach(function(b){ var k = bankKey(b); if (k && !seen[k]){ seen[k] = 1; out.push(String(b).trim()); } });
+  return out.sort(function(a, b){ return a.localeCompare(b, 'ru'); });
+}
+function colorsHtml(){
+  var h = '';
+  if (PR.theme === 'custom'){
+    var c = Object.assign({}, CUSTOM_DEF, PR.custom || {});
+    h += '<section class="card"><h2>Своя тема<button class="rs" data-act="cureset" type="button" style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:0;text-transform:none">Сбросить</button></h2>' +
+      CUSTOM_F.map(function(f){ return '<div class="cpick"><span>' + f[1] + '</span><span class="cc"><input type="color" data-cu="' + f[0] + '" value="' + esc(c[f[0]]) + '" aria-label="' + f[1] + '"></span></div>'; }).join('') +
+      '<p class="note">Остальные оттенки (подписи, линии, фон кнопок) подбираются сами из этих цветов. Текст на верхнем блоке и кнопках становится чёрным или белым, в зависимости от того, что читается лучше.</p></section>';
+  }
+  var sc = PR.scale || SCALE_DEF;
+  h += '<section class="card"><h2>Шкала лимитов' + (PR.scale ? '<button data-act="screset" type="button" style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:0;text-transform:none">Сбросить</button>' : '') + '</h2>' +
+    '<div class="scale" style="background:linear-gradient(90deg,' + [0, .25, .5, .75, 1].map(heat).join(',') + ')"></div>' +
+    [['Мало отправлено', 0], ['Половина', 1], ['Почти всё', 2]].map(function(x){ return '<div class="cpick"><span>' + x[0] + '</span><span class="cc"><input type="color" data-sc="' + x[1] + '" value="' + esc(toHex(sc[x[1]])) + '" aria-label="' + x[0] + '"></span></div>'; }).join('') +
+    '<p class="note">' + (PR.scale ? 'Своя шкала: проценты, полоски и точки окрашиваются этими цветами.' : 'Сейчас стандартная шкала: зелёный → жёлтый → красный. Поменяй любой цвет, и включится своя.') + '</p></section>';
+  var bn = bankNames(), bc = (S.set || {}).bankCol || {};
+  h += '<section class="card"><h2>Цвета банков</h2>' + (bn.length ? bn.map(function(b){
+    var k = bankKey(b), col = bankColors(b), cu = bc[k] && bc[k].bg;
+    return '<div class="cpick"><span>' + bankBadge(b) + '</span><span class="cc">' +
+      '<label><input type="color" data-bb="' + esc(k) + '" value="' + esc(toHex(col.bg)) + '">фон</label>' +
+      '<label><input type="color" data-bf="' + esc(k) + '" value="' + esc(toHex(col.fg)) + '">текст</label>' +
+      (cu ? '<button class="rs" data-bres="' + esc(k) + '" type="button" aria-label="Вернуть стандартный цвет">' + RS_IC + '</button>' : '<span class="rs" style="visibility:hidden"></span>') + '</span></div>';
+  }).join('') : '<div class="empty">Банки появятся здесь, когда добавишь карты.</div>') +
+    '<p class="note">Цвета банков общие для телефона и ноутбука. Когда меняешь фон, цвет текста подбирается сам, но его тоже можно поменять.</p></section>';
   return h;
 }
 
@@ -1207,9 +1364,11 @@ function closeSheet(fromPop){
   setTimeout(function(){ if (!sh.classList.contains('on')) sh.classList.remove('vis'); }, 500);
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   if (sh.id === 'sOp') OQ = [];
-  if (pushed && !fromPop){ pushed = false; try { history.back(); } catch(e){} } else pushed = false;
+  if (pushed && !fromPop){ pushed = false; ignorePop = true; try { history.back(); } catch(e){ ignorePop = false; } } else pushed = false;
 }
+var ignorePop = false;
 window.addEventListener('popstate', function(){
+  if (ignorePop){ ignorePop = false; return; }
   if (openSh){ pushed = false; closeSheet(true); return; }
   if (S.person && S.view === 'cards') leavePerson(true);
 });
@@ -1217,7 +1376,7 @@ $('#backdrop').addEventListener('click', function(){ closeSheet(); });
 document.querySelectorAll('[data-close]').forEach(function(b){ b.addEventListener('click', function(){ closeSheet(); }); });
 document.querySelectorAll('.sheet').forEach(function(sh){
   var y0 = null, dy = 0;
-  sh.addEventListener('touchstart', function(e){ if (sh.scrollTop > 0 || e.target.closest('input,select,.optcards,#cHist')){ y0 = null; return; } y0 = e.touches[0].clientY; dy = 0; }, {passive:true});
+  sh.addEventListener('touchstart', function(e){ if (sh.scrollTop > 0 || e.target.closest('input,select,textarea,.optcards,#cHist,#fList')){ y0 = null; return; } y0 = e.touches[0].clientY; dy = 0; }, {passive:true});
   sh.addEventListener('touchmove', function(e){ if (y0 === null) return; dy = e.touches[0].clientY - y0; if (dy > 0){ sh.classList.add('drag'); sh.style.transform = 'translateY(' + dy + 'px)'; } }, {passive:true});
   sh.addEventListener('touchend', function(){ if (y0 === null) return; sh.classList.remove('drag'); if (dy > 110) closeSheet(); else sh.style.transform = ''; y0 = null; });
 });
@@ -1852,6 +2011,92 @@ function takeShared(){
   }).then(function(files){ if (files.length) startReceipts(files); }).catch(function(e){ console.error(e); });
 }
 
+/* ============ счета ФОП ============ */
+var FOP_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>';
+var DEF_PURPOSE = "За надання послуг в сфері інформаційних технологій та комп'ютерних систем. Без ПДВ.";
+function fops(){ var f = (S.set || {}).fops; return Array.isArray(f) ? f.filter(Boolean) : []; }
+function ibanClean(s){ return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+function ibanFmt(s){ return ibanClean(s).replace(/(.{4})(?=.)/g, '$1 '); }
+function ibanOk(s){
+  s = ibanClean(s); if (!/^UA\d{27}$/.test(s)) return false;
+  var r = (s.slice(4) + s.slice(0, 4)).replace(/[A-Z]/g, function(ch){ return ch.charCodeAt(0) - 55; }), m = 0;
+  for (var i = 0; i < r.length; i++) m = (m * 10 + +r[i]) % 97;
+  return m === 1;
+}
+function fopMsg(f, text){ return [ibanClean(f.iban), String(f.name || '').trim(), digits(f.code), String(text || '').trim()].filter(Boolean).join('\n\n'); }
+function fopTile(f){
+  var ib = ibanClean(f.iban), n = (f.purposes || []).length;
+  return '<button class="fop" data-fop="' + esc(f.id) + '"><span class="mid">' + (f.bank ? bankBadge(f.bank, 'sm') : '') + '<span class="t1">' + esc(f.name || 'ФОП') + '</span>' +
+    '<span class="t2 mono">' + esc(ib ? ib.slice(0, 4) + ' … ' + ib.slice(-4) : 'IBAN не указан') + ' · ' + esc(digits(f.code) || '—') + ' · ' + n + ' ' + plural(n, 'назначение', 'назначения', 'назначений') + '</span></span><span class="ci">' + FOP_IC + '</span></button>';
+}
+var FO = null;
+function openFop(f){
+  FO = f;
+  var ps = (f.purposes || []).filter(function(x){ return x && String(x.text || '').trim(); });
+  $('#fTitle').textContent = f.name || 'ФОП';
+  $('#fList').innerHTML = ps.length ? ps.map(function(x, i){ return '<button class="kved" data-pi="' + i + '" type="button"><b>' + esc(x.label || ('Назначение ' + (i + 1))) + '</b><span>' + esc(x.text) + '</span></button>'; }).join('')
+    : '<div class="empty" style="padding:10px">Назначений пока нет. Нажми «Изменить» и добавь.</div>';
+  $('#fPre').textContent = fopMsg(f, ps[0] ? ps[0].text : '');
+  $('#fCode').textContent = digits(f.code).length === 8 ? 'ЄДРПОУ' : 'ІПН';
+  openSheet('sFop');
+}
+$('#fList').addEventListener('click', function(e){
+  var b = e.target.closest('[data-pi]'); if (!b || !FO) return;
+  var ps = (FO.purposes || []).filter(function(x){ return x && String(x.text || '').trim(); }), x = ps[+b.getAttribute('data-pi')]; if (!x) return;
+  var msg = fopMsg(FO, x.text);
+  $('#fPre').textContent = msg;
+  copyText(msg).then(function(){ vib(12); b.classList.add('done'); toast('Реквизиты скопированы: ' + (x.label || 'назначение')); setTimeout(closeSheet, 450); })
+    .catch(function(){ toast('Не получилось скопировать — выдели текст ниже вручную', 4000); });
+});
+$('#fList').addEventListener('pointerover', function(e){ var b = e.target.closest('[data-pi]'); if (!b || !FO) return; var ps = (FO.purposes || []).filter(function(x){ return x && String(x.text || '').trim(); }); var x = ps[+b.getAttribute('data-pi')]; if (x) $('#fPre').textContent = fopMsg(FO, x.text); });
+$('#fIban').addEventListener('click', function(){ if (!FO) return; var v = ibanClean(FO.iban); if (!v) return toast('IBAN не указан'); copyText(v).then(function(){ vib(12); toast('IBAN скопирован'); }); });
+$('#fCode').addEventListener('click', function(){ if (!FO) return; var v = digits(FO.code); if (!v) return toast('Код не указан'); copyText(v).then(function(){ vib(12); toast($('#fCode').textContent + ' скопирован'); }); });
+$('#fEdit').addEventListener('click', function(){ if (FO) openFopEd(FO); });
+
+var FE = null;
+function purpRow(x){
+  return '<div class="prow"><label class="field"><input data-pl type="text" maxlength="60" placeholder="Название, например 62.01 IT" value="' + esc(x.label || '') + '" autocomplete="off"></label>' +
+    '<textarea data-pt maxlength="300" placeholder="Текст назначения платежа">' + esc(x.text || '') + '</textarea><button class="rm" data-prm type="button">Убрать</button></div>';
+}
+function openFopEd(f){
+  FE = f ? {id:f.id} : {id:null};
+  $('#feTitle').textContent = f ? 'Изменить ФОП' : 'Новый счёт ФОП';
+  $('#feOwner').value = f ? (f.owner || '') : (S.person || ME);
+  $('#feBank').value = f ? (f.bank || '') : 'Монобанк';
+  $('#feName').value = f ? (f.name || '') : 'ФОП ';
+  $('#feIban').value = f ? ibanFmt(f.iban) : '';
+  $('#feCode').value = f ? digits(f.code) : '';
+  var ps = f && f.purposes && f.purposes.length ? f.purposes : [{label:'IT-послуги', text:DEF_PURPOSE}];
+  $('#fePurp').innerHTML = ps.map(purpRow).join('');
+  $('#dlHolders').innerHTML = holders().map(function(h){ return '<option value="' + esc(h[0]) + '">'; }).join('');
+  var d = $('#feDel'); d.hidden = !f; d.classList.remove('armed'); d.textContent = 'Удалить счёт ФОП';
+  openSheet('sFopEd');
+}
+$('#feAddP').addEventListener('click', function(){ $('#fePurp').insertAdjacentHTML('beforeend', purpRow({})); var ta = $('#fePurp').lastElementChild.querySelector('input'); if (ta) ta.focus(); });
+$('#fePurp').addEventListener('click', function(e){ var b = e.target.closest('[data-prm]'); if (b) b.closest('.prow').remove(); });
+$('#feIban').addEventListener('blur', function(e){ e.target.value = ibanFmt(e.target.value); });
+$('#feCode').addEventListener('input', function(e){ var d = digits(e.target.value).slice(0, 10); if (d !== e.target.value) e.target.value = d; });
+$('#feSave').addEventListener('click', function(){
+  var owner = $('#feOwner').value.trim().slice(0, 30), name = $('#feName').value.trim().replace(/\s+/g, ' ').slice(0, 120), iban = ibanClean($('#feIban').value), code = digits($('#feCode').value);
+  if (!owner){ shake($('#feOwner').parentNode); toast('Впиши, чей это ФОП'); return; }
+  if (name.replace(/^ФОП\s*/i, '').length < 3){ shake($('#feName').parentNode); toast('Впиши получателя: ФОП и ПІБ'); return; }
+  if (!ibanOk(iban)){ shake($('#feIban').parentNode); toast(/^UA\d{27}$/.test(iban) ? 'IBAN не проходит проверку — похоже на опечатку' : 'IBAN: UA и 27 цифр'); return; }
+  if (code.length !== 8 && code.length !== 10){ shake($('#feCode').parentNode); toast('ЄДРПОУ — 8 цифр, ІПН — 10'); return; }
+  var ps = [].map.call(document.querySelectorAll('#fePurp .prow'), function(r){ return {label:r.querySelector('[data-pl]').value.trim().slice(0, 60), text:r.querySelector('[data-pt]').value.trim().replace(/\s+/g, ' ').slice(0, 300)}; }).filter(function(x){ return x.text; });
+  if (!ps.length){ toast('Добавь хотя бы одно назначение'); return; }
+  var rec = {id:FE.id || uid(), owner:owner, bank:$('#feBank').value.trim().slice(0, 30), name:name, iban:iban, code:code, purposes:ps};
+  var list = fops().slice(), i = -1; list.forEach(function(x, j){ if (x.id === rec.id) i = j; });
+  if (i > -1) list[i] = rec; else list.push(rec);
+  S.set = Object.assign({}, S.set, {fops:list}); store.setSettings({fops:list}).catch(dbErr);
+  toast(i > -1 ? 'ФОП сохранён' : 'ФОП добавлен'); closeSheet(); render();
+});
+$('#feDel').addEventListener('click', function(){
+  if (!arm($('#feDel'), 'Точно удалить?')) return;
+  var list = fops().filter(function(x){ return x.id !== FE.id; });
+  S.set = Object.assign({}, S.set, {fops:list}); store.setSettings({fops:list}).catch(dbErr);
+  toast('ФОП удалён'); closeSheet(); render();
+});
+
 /* ============ клики ============ */
 var SORTS = ['pct','left','bal','adv','out'];
 document.addEventListener('click', function(e){
@@ -1859,8 +2104,10 @@ document.addEventListener('click', function(e){
   if (cp && !cp.closest('.sheet')){ e.stopPropagation(); return doCopy(cp); }
   var eb = e.target.closest('[data-bal]');
   if (eb && !eb.closest('.sheet')){ var bc = byId(S.cards, eb.getAttribute('data-bal')); if (bc) editBal(bc); return; }
-  var t = e.target.closest('[data-tab],[data-card],[data-op],[data-hold],[data-act],[data-sort],[data-m],[data-hd],[data-th],[data-sh],[data-person],[data-ord]');
+  var t = e.target.closest('[data-tab],[data-card],[data-op],[data-hold],[data-act],[data-sort],[data-m],[data-hd],[data-th],[data-sh],[data-person],[data-ord],[data-fop],[data-bres]');
   if (!t || t.closest('.sheet')) return;
+  if (t.hasAttribute('data-fop')){ var fp = byId(fops(), t.getAttribute('data-fop')); if (fp) openFop(fp); return; }
+  if (t.hasAttribute('data-bres')){ var all = Object.assign({}, (S.set || {}).bankCol || {}); all[t.getAttribute('data-bres')] = null; delete BF_TOUCHED[t.getAttribute('data-bres')]; S.set = Object.assign({}, S.set, {bankCol:all}); store.setSettings({bankCol:all}).catch(dbErr); return render(); }
   if (t.hasAttribute('data-tab')) return go(t.getAttribute('data-tab'));
   if (t.hasAttribute('data-person')) return openPerson(t.getAttribute('data-person'));
   if (t.hasAttribute('data-ord')){ var od = byId(S.orders, t.getAttribute('data-ord')); if (od) openOrder(od); return; }
@@ -1874,6 +2121,9 @@ document.addEventListener('click', function(e){
   if (t.hasAttribute('data-sh')){ PR.shape = t.getAttribute('data-sh'); savePrefs(); applyTheme(); return render(); }
   var a = t.getAttribute('data-act');
   if (a === 'newcard') return openCard(null);
+  if (a === 'newfop') return openFopEd(null);
+  if (a === 'cureset'){ PR.custom = null; savePrefs(); applyTheme(); return render(); }
+  if (a === 'screset'){ PR.scale = null; savePrefs(); return render(); }
   if (a === 'back') return leavePerson();
   if (a === 'auto'){ store.setSettings({auto:(S.set || {}).auto === false}).catch(dbErr); S.set = Object.assign({}, S.set, {auto:(S.set || {}).auto === false}); return render(); }
   if (a === 'tg') return openTg();
@@ -1882,7 +2132,30 @@ document.addEventListener('click', function(e){
   if (a === 'reset'){ store.reset(); toast('Примеры возвращены'); return; }
   if (a === 'logout'){ if (window.firebase) firebase.auth().signOut(); return; }
 });
-document.addEventListener('input', function(e){ if (e.target && e.target.id === 'q'){ S.q = e.target.value; render(); } });
+document.addEventListener('input', function(e){
+  var t = e.target; if (!t) return;
+  if (t.id === 'q'){ S.q = t.value; render(); return; }
+  if (t.hasAttribute('data-cu')){ PR.custom = Object.assign({}, CUSTOM_DEF, PR.custom || {}); PR.custom[t.getAttribute('data-cu')] = t.value; applyTheme(); return; }
+  if (t.hasAttribute('data-sc')){ PR.scale = (PR.scale || SCALE_DEF).slice(); PR.scale[+t.getAttribute('data-sc')] = t.value; liveScale(); return; }
+  if (t.hasAttribute('data-bb') || t.hasAttribute('data-bf')){
+    var row = t.closest('.cpick'), bk = row && row.querySelector('.bk'); if (!bk) return;
+    if (t.hasAttribute('data-bb')){ bk.style.setProperty('--bb', t.value); var fi = row.querySelector('[data-bf]'); if (!BF_TOUCHED[t.getAttribute('data-bb')]){ fi.value = inkFor(t.value).toLowerCase(); bk.style.setProperty('--bf', fi.value); } }
+    else { BF_TOUCHED[t.getAttribute('data-bf')] = 1; bk.style.setProperty('--bf', t.value); }
+  }
+});
+var BF_TOUCHED = {};
+function liveScale(){ var el = document.querySelector('.scale'); if (el) el.style.background = 'linear-gradient(90deg,' + [0, .25, .5, .75, 1].map(heat).join(',') + ')'; }
+document.addEventListener('change', function(e){
+  var t = e.target; if (!t) return;
+  if (t.hasAttribute('data-cu')){ savePrefs(); return render(); }
+  if (t.hasAttribute('data-sc')){ savePrefs(); return render(); }
+  if (t.hasAttribute('data-bb') || t.hasAttribute('data-bf')){
+    var k = t.getAttribute('data-bb') || t.getAttribute('data-bf'), row = t.closest('.cpick');
+    var v = {bg:row.querySelector('[data-bb]').value, fg:row.querySelector('[data-bf]').value};
+    var all = Object.assign({}, (S.set || {}).bankCol || {}); all[k] = v;
+    S.set = Object.assign({}, S.set, {bankCol:all}); store.setSettings({bankCol:all}).catch(dbErr); render();
+  }
+});
 $('#fab').addEventListener('click', function(){
   if (!S.cards.length){ toast('Сначала добавь карту'); openCard(null); return; }
   openOp(null);
@@ -1899,7 +2172,7 @@ $('#fab').addEventListener('click', function(){
 var unlisten = null;
 function show(id){ ['splash','login','denied','main'].forEach(function(x){ document.getElementById(x).hidden = x !== id; }); }
 function onData(c, list){
-  if (c === 'set'){ S.set = list || {}; if (S.ready.c && S.ready.o && S.view === 'settings') queueRender(); setTimeout(processOrders, 0); return; }
+  if (c === 'set'){ S.set = list || {}; if (S.ready.c && S.ready.o && !(document.activeElement && document.activeElement.type === 'color')) queueRender(); setTimeout(processOrders, 0); return; }
   if (c === 'orders'){ S.orders = (list || []).filter(function(o){ return o && o.orderId; }); queueRender(); setTimeout(processOrders, 0); return; }
   if (c === 'bot'){ S.bot = list || {}; if (S.view === 'settings') queueRender(); return; }
   if (c === 'cards'){ S.cards = list.filter(function(k){ return k && typeof k === 'object'; }).sort(function(a, b){ return (a.ts || 0) - (b.ts || 0); }); S.ready.c = true; }
