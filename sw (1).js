@@ -1,5 +1,5 @@
 // Офлайн-кэш «Лимитов» + приём квитанций через «Поделиться» (Android).
-var CACHE = 'limity-v6';
+var CACHE = 'limity-v9';
 var SHELL = ['./', './index.html', './config.js', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
@@ -24,7 +24,7 @@ self.addEventListener('fetch', function (e) {
       var files = fd.getAll('receipt').filter(function (f) { return f && f.size; });
       return caches.open('share-inbox').then(function (c) {
         return Promise.all(files.map(function (f, i) {
-          return c.put(new Request('./shared/' + Date.now() + '-' + i), new Response(f, { headers: { 'content-type': f.type || 'image/png' } }));
+          return c.put(new Request('./shared/' + Date.now() + '-' + i), new Response(f, { headers: { 'content-type': f.type || 'image/png', 'x-name': encodeURIComponent(f.name || '') } }));
         }));
       });
     }).then(function () { return Response.redirect('./?shared=1', 303); })
@@ -38,7 +38,7 @@ self.addEventListener('fetch', function (e) {
     }));
     return;
   }
-  if (url.hostname === 'www.gstatic.com' || url.hostname === 'fonts.gstatic.com' || url.hostname === 'fonts.googleapis.com' || url.hostname === 'cdn.jsdelivr.net') {
+  if (url.hostname === 'www.gstatic.com' || url.hostname === 'fonts.gstatic.com' || url.hostname === 'fonts.googleapis.com' || url.hostname === 'cdn.jsdelivr.net' || url.hostname === 'cdnjs.cloudflare.com') {
     e.respondWith(caches.match(req).then(function (m) { return m || fetch(req).then(function (res) { return put(req, res); }); }));
   }
 });
