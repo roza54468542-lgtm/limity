@@ -178,6 +178,14 @@ input,select{font:inherit;color:inherit}
 .card .togrow+.togrow{margin-top:12px}
 .dupe{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--ink);border-radius:var(--r-md);padding:9px 12px;font-size:13px;font-weight:600}
 
+.attn{background:var(--surface);border-radius:var(--r-lg);padding:14px 16px;box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--warn) 55%,transparent)}
+.attn h2{font:700 12px/1.2 var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--warn);margin:0 0 6px;display:flex;justify-content:space-between;gap:8px}
+.ao{display:flex;align-items:center;gap:12px;padding:10px 0;width:100%;text-align:left}
+.ao+.ao{border-top:1px solid var(--line)}
+.ao .oic{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
+.okxst{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.okxst i{width:8px;height:8px;border-radius:50%;display:block;flex:none}
+
 /* ---------- table (PC) ---------- */
 .tbl-wrap{display:none}
 table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
@@ -528,6 +536,7 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
   <label class="field"><input id="oNote" type="text" maxlength="60" placeholder="Комментарий (необязательно)" autocomplete="off"></label>
   <button class="btn" id="oSave" type="button">Сохранить</button>
   <button class="btn ghost sm" id="oSkip" type="button" hidden>Пропустить эту квитанцию</button>
+  <button class="btn ghost sm" id="oOrdSkip" type="button" hidden>Не учитывать этот ордер</button>
   <button class="btn danger" id="oDel" type="button" hidden>Удалить</button>
 </section>
 
@@ -568,6 +577,19 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
   <p class="note" id="nNote" style="margin:0"></p>
   <label class="field"><input id="nVal" type="text" inputmode="decimal" autocomplete="off"><span class="suf">₴</span></label>
   <button class="btn" id="nSave" type="button">Сохранить</button>
+</section>
+
+<!-- OKX -->
+<section class="sheet" id="sOkx" role="dialog" aria-modal="true" aria-labelledby="kxTitle">
+  <div class="grab"></div>
+  <div class="sh-h"><h3 id="kxTitle">Подключение OKX</h3><button class="x" data-close aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <p class="note" style="margin:0">Адрес сервера Cloudflare и ключ приложения (APP_KEY), который ты задал в его настройках.</p>
+  <div class="col"><div class="fl">Адрес сервера</div><label class="field"><input id="kxUrl" type="url" placeholder="https://limity-okx.имя.workers.dev" autocomplete="off"></label></div>
+  <div class="col"><div class="fl">Ключ приложения</div><label class="field"><input id="kxKey" type="password" placeholder="APP_KEY" autocomplete="off"></label></div>
+  <p class="note" id="kxSt" style="margin:0"></p>
+  <button class="btn" id="kxSave" type="button">Сохранить и проверить</button>
+  <button class="btn ghost sm" id="kxSync" type="button">Забрать ордера сейчас</button>
+  <button class="btn danger" id="kxOff" type="button">Отключить OKX</button>
 </section>
 
 <!-- Telegram -->
@@ -690,7 +712,7 @@ function applyTheme(){
 }
 applyTheme();
 
-var S = {cards:[], ops:[], set:{}, view:'cards', person:null, holder:'all', q:'', month:curMonth(), histDir:'all', ready:{c:false, o:false}};
+var S = {cards:[], ops:[], set:{}, orders:[], bot:{}, view:'cards', person:null, holder:'all', q:'', month:curMonth(), histDir:'all', ready:{c:false, o:false}};
 var store = null;
 
 function byId(list, id){ for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i]; return null; }
@@ -772,7 +794,9 @@ function makeDemo(){
   add('c4','out',27000,1); add('c4','out',15500,2);
   add('c5','out',8000,2);
   n = 200; add('c1','in',35000,3,'Ордер на продажу'); add('c3','in',20000,3,'Ордер на продажу');
-  return {cards:cards, ops:ops, set:{auto:true}};
+  var nowT = Date.now();
+  var orders = [{id:'9001', orderId:'9001', side:'sell', status:'completed', fiat:410000, fiatCurrency:'UAH', counterparty:'Ivan_P2P', created:nowT - 40 * 60000, firstSeen:nowT - 39 * 60000, receipts:[], done:false, need:true, needWhy:'Ордер завершён без квитанции в чате'}];
+  return {cards:cards, ops:ops, set:{auto:true, okxUrl:'https://limity-okx.example.workers.dev', okxKey:'demo', okxSince:nowT - 86400000}, orders:orders, bot:{lastRun:nowT - 40000, lastResult:{checked:3}}};
 }
 function DemoStore(){
   var KEY = 'limity-demo-v2', data = null;
@@ -780,9 +804,10 @@ function DemoStore(){
   if (!data || !data.cards) data = makeDemo();
   var subs = [];
   if (!data.set) data.set = {auto:true};
-  function emit(){ subs.forEach(function(f){ f('cards', data.cards.slice()); f('ops', data.ops.slice()); f('set', Object.assign({}, data.set)); }); }
+  if (!data.orders) data.orders = []; if (!data.bot) data.bot = {};
+  function emit(){ subs.forEach(function(f){ f('cards', data.cards.slice()); f('ops', data.ops.slice()); f('set', Object.assign({}, data.set)); f('orders', data.orders.slice()); f('bot', Object.assign({}, data.bot)); }); }
   function save(){ try { localStorage.setItem(KEY, JSON.stringify(data)); } catch(e){} setTimeout(emit, 0); return Promise.resolve(); }
-  function col(c){ return c === 'lcards' ? data.cards : data.ops; }
+  function col(c){ return c === 'lcards' ? data.cards : c === 'lorders' ? data.orders : data.ops; }
   function idx(a, id){ for (var i = 0; i < a.length; i++) if (a[i].id === id) return i; return -1; }
   return {
     listen: function(cb){ subs.push(cb); setTimeout(emit, 300); return function(){ subs = []; }; },
@@ -790,6 +815,7 @@ function DemoStore(){
     patch: function(c, id, p){ var a = col(c), i = idx(a, id); if (i > -1) Object.assign(a[i], p); return save(); },
     del: function(c, id){ var a = col(c), i = idx(a, id); if (i > -1) a.splice(i, 1); return save(); },
     setSettings: function(p){ Object.assign(data.set, p); return save(); },
+    claim: function(){ return Promise.resolve(true); },
     reset: function(){ data = makeDemo(); return save(); }
   };
 }
@@ -802,12 +828,16 @@ function FirebaseStore(db){
       un.push(db.collection('lcards').onSnapshot(function(s){ cb('cards', s.docs.map(function(d){ var o = d.data(); o.id = d.id; return o; })); }, dbErr));
       un.push(db.collection('lops').where('date', '>=', from).onSnapshot(function(s){ cb('ops', s.docs.map(function(d){ var o = d.data(); o.id = d.id; return o; })); }, dbErr));
       un.push(db.collection('lsettings').doc('main').onSnapshot(function(d){ cb('set', d.exists ? d.data() : {}); }, dbErr));
+      un.push(db.collection('lorders').where('firstSeen', '>=', Date.now() - 7 * 86400000).onSnapshot(function(s){ cb('orders', s.docs.map(function(d){ var o = d.data(); o.id = d.id; return o; })); }, function(e){ console.error(e); }));
+      un.push(db.collection('lbot').doc('state').onSnapshot(function(d){ var o = d.exists ? d.data() : {}; delete o.orders; cb('bot', o); }, function(e){ console.error(e); }));
       return function(){ un.forEach(function(f){ f(); }); };
     },
     put: function(c, id, o){ return db.collection(c).doc(id).set(clean(o)); },
     patch: function(c, id, p){ return db.collection(c).doc(id).update(clean(p)); },
     del: function(c, id){ return db.collection(c).doc(id).delete(); },
-    setSettings: function(p){ return db.collection('lsettings').doc('main').set(p, {merge:true}); }
+    setSettings: function(p){ return db.collection('lsettings').doc('main').set(p, {merge:true}); },
+    /* «застолбить» ордер, чтобы его не обработали два устройства сразу */
+    claim: function(id, dev){ var ref = db.collection('lorders').doc(id); return db.runTransaction(function(tx){ return tx.get(ref).then(function(d){ var o = d.exists ? d.data() : null; if (!o || o.done) return false; if (o.claimBy && o.claimBy !== dev && Date.now() - (o.claimAt || 0) < 120000) return false; tx.update(ref, {claimBy:dev, claimAt:Date.now()}); return true; }); }).catch(function(e){ console.error(e); return false; }); }
   };
 }
 function dbErr(e){
@@ -857,6 +887,7 @@ function vPeople(){
   h += '<div class="filters"><div class="frow" style="grid-template-columns:minmax(0,1fr)"><label class="field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg><input id="q" type="search" placeholder="Найти карту: имя, банк или цифры" value="' + esc(S.q) + '" autocomplete="off"></label></div></div>';
   if (!S.cards.length) return h + '<section class="card"><div class="empty">Добавь первую карту: владелец, банк, номер и месячный лимит на отправку.</div><button class="btn ghost sm" data-act="newcard">Добавить карту</button></section>';
   if (S.q.trim()){ S.holder = 'all'; return h + '<div class="sec"><span>Найденные карты</span></div>' + cardsBlock(visibleCards()); }
+  h += attentionHtml();
   var ps = personStats();
   h += '<div class="sec"><span>Люди</span><span>' + ps.length + '</span></div><div class="people">' + ps.map(function(p){
     var col = p.active ? heat(p.p) : 'var(--muted)';
@@ -953,11 +984,11 @@ function vHist(){
 function opRow(o, inCard){
   var c = byId(S.cards, o.card), adj = o.src === 'adjust';
   if (inCard === true){
-    var sub2 = (adj ? 'Корректировка' : (o.kind === 'xfer' ? (o.dir === 'in' ? 'Перевод с другой карты' : 'Перевод на другую карту') : (o.dir === 'in' ? 'Получение' : 'Отправка'))) + (o.src === 'receipt' ? ' · по квитанции' : '') + (o.note ? ' · ' + o.note : '');
+    var sub2 = (adj ? 'Корректировка' : (o.kind === 'xfer' ? (o.dir === 'in' ? 'Перевод с другой карты' : 'Перевод на другую карту') : (o.dir === 'in' ? 'Получение' : 'Отправка'))) + (o.src === 'receipt' ? ' · по квитанции' : o.src === 'okx' ? ' · ордер OKX' : '') + (o.note ? ' · ' + o.note : '');
     return '<button class="op" data-op="' + esc(o.id) + '"><span class="oic ' + (adj ? 'adj' : o.dir) + '">' + (adj ? ADJ : (o.dir === 'in' ? ARR_IN : ARR_OUT)) + '</span><span class="mid"><span class="t1">' + esc(dayLabel(o.date)) + '</span><span class="t2">' + esc(sub2) + '</span></span><span class="sum' + (o.dir === 'in' ? ' in' : '') + '">' + (o.amount < 0 ? '−' : '') + money(Math.abs(o.amount)) + '</span></button>';
   }
   var cls = adj ? 'adj' : o.dir, ic = adj ? ADJ : (o.dir === 'in' ? ARR_IN : ARR_OUT);
-  var sub = (adj ? 'Корректировка по банку' : (o.kind === 'xfer' ? (o.dir === 'in' ? 'Перевод с другой карты' : 'Перевод на другую карту') : (o.dir === 'in' ? 'Получение' : 'Отправка'))) + (o.src === 'receipt' ? ' · по квитанции' : '') + (o.note ? ' · ' + o.note : '');
+  var sub = (adj ? 'Корректировка по банку' : (o.kind === 'xfer' ? (o.dir === 'in' ? 'Перевод с другой карты' : 'Перевод на другую карту') : (o.dir === 'in' ? 'Получение' : 'Отправка'))) + (o.src === 'receipt' ? ' · по квитанции' : o.src === 'okx' ? ' · ордер OKX' : '') + (o.note ? ' · ' + o.note : '');
   return '<button class="op" data-op="' + esc(o.id) + '"><span class="oic ' + cls + '">' + ic + '</span><span class="mid"><span class="t1">' + esc(c ? cardLabel(c) : 'Удалённая карта') + '</span><span class="t2">' + esc(sub) + '</span></span><span class="sum' + (o.dir === 'in' ? ' in' : '') + '">' + (o.amount < 0 ? '−' : '') + money(Math.abs(o.amount)) + '</span></button>';
 }
 
@@ -974,6 +1005,7 @@ function vSettings(){
     '<p class="note">Темп: какая часть месяца уже прошла. Например, 10-го числа это примерно треть, поэтому нормально открутить около 33% лимита. Тонкая черта на полосе показывает, где ты «должен» быть сегодня.</p></section>';
   var tg = S.set || {}, tgOn = !!(tg.tgToken && tg.tgChat);
   h += '<section class="card"><h2>Автоматика</h2><button class="togrow" data-act="auto" type="button"><span>Записывать квитанции сразу<span class="cnt">Если карта и сумма найдены, запись создаётся без вопросов, с кнопкой «Отменить»</span></span><span class="switch" role="switch" aria-checked="' + (tg.auto !== false) + '"></span></button>' +
+    okxRowHtml() +
     '<div class="kv" style="margin-top:10px"><span>Telegram</span><b>' + (tgOn ? 'подключён' : 'не подключён') + '</b></div><div class="stack" style="margin-top:8px"><button class="btn ghost sm" data-act="tg">' + (tgOn ? 'Настроить уведомления' : 'Подключить уведомления') + '</button></div></section>';
   h += '<section class="card"><h2>Квитанции</h2><p class="note" style="margin:0">Скрин читается прямо на телефоне или ноутбуке, никуда не отправляется. В первый раз приложение скачает модуль распознавания (около 10 МБ), дальше работает быстрее.</p><p class="note">На ноутбуке скрин можно вставить сочетанием <b>Ctrl+V</b> или перетащить в окно.</p></section>';
   h += '<section class="card"><h2>База</h2><div class="kv"><span>Карт</span><b>' + S.cards.length + '</b></div><div class="kv"><span>Записей за год</span><b>' + S.ops.length + '</b></div>';
@@ -1088,7 +1120,7 @@ function openOp(o, opts){
   } else OP = o ? {id:o.id, orig:o, dir:o.dir, card:o.card, to:null, lim:true, src:o.src || 'manual'} : {id:null, dir:'out', card:opts.card || null, to:null, lim:true, src:'manual'};
   $('#oTitle').textContent = o ? (OP.dir === 'xfer' ? 'Перевод между картами' : 'Запись') : 'Новая запись';
   $('#oAmt').value = o ? kopIn(Math.abs(o.amount)) : ''; $('#oDate').value = o ? o.date : today(); $('#oNote').value = o ? (o.note || '') : '';
-  $('#oSearch').value = ''; $('#oOcr').hidden = true; $('#oSkip').hidden = true; $('#oDrop').hidden = !!o; $('#oDupe').hidden = true; $('#oRawWrap').hidden = true; $('#oRawBtn').hidden = true; $('#oRawBtn').textContent = 'Показать прочитанный текст';
+  $('#oSearch').value = ''; $('#oOcr').hidden = true; $('#oSkip').hidden = true; $('#oDrop').hidden = !!o; $('#oDupe').hidden = true; $('#oImg').hidden = false; $('#oOrdSkip').hidden = true; OP.okx = null; $('#oRawWrap').hidden = true; $('#oRawBtn').hidden = true; $('#oRawBtn').textContent = 'Показать прочитанный текст';
   var d = $('#oDel'); d.hidden = !o; d.classList.remove('armed'); d.textContent = 'Удалить';
   renderOpCards(); syncOp(); if (!opts.keep) openSheet('sOp');
 }
@@ -1187,7 +1219,9 @@ function doneMsg(sp){
 }
 $('#oSave').addEventListener('click', function(){
   var sp = readOpForm(); if (!validOp(sp)) return;
+  var okxId = OP.okx;
   var ids = commitOp(sp); vib(12);
+  if (okxId) store.patch('lorders', okxId, {done:true, need:false, opIds:ids, card:sp.card, doneAt:Date.now(), doneHow:'manual'}).catch(dbErr);
   if (!sp.id) notifyRecord(sp);
   if (ids.length) showUndo('Записал: ' + doneMsg(sp), ids); else toast('Сохранено');
   if (OQ.length) nextReceipt(); else closeSheet();
@@ -1275,7 +1309,7 @@ function nextReceipt(){
   $('#oTitle').textContent = 'Квитанция';
   $('#oDrop').hidden = true; $('#oOcr').hidden = false; $('#oSkip').hidden = OQ.length === 0;
   $('#oQueue').textContent = OQ.length ? 'Ещё в очереди: ' + OQ.length : '';
-  var url = isPdf(f) ? '' : URL.createObjectURL(f); $('#oImg').src = url || 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
+  var url = isPdf(f) ? '' : URL.createObjectURL(f); $('#oImg').src = url || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
   setOcr('', 'Читаю квитанцию…', isPdf(f) ? 'PDF из банка читается быстро.' : 'Первый раз может занять до минуты.', 2);
   tessProgress = function(m){
     var st = m.status || '', p = m.progress || 0;
@@ -1516,6 +1550,134 @@ var NUM = null;
 $('#nSave').addEventListener('click', function(){ var v = parseMoney($('#nVal').value); if (isNaN(v)){ shake($('#nVal').parentNode); return; } NUM.save(v); closeSheet(); });
 $('#nVal').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('#nSave').click(); });
 
+/* ============ OKX: ордера с сервера ============ */
+var DEV = (function(){ try { var d = localStorage.getItem('limity-dev'); if (!d){ d = uid(); localStorage.setItem('limity-dev', d); } return d; } catch(e){ return uid(); } })();
+function okxOn(){ var t = S.set || {}; return !!(t.okxUrl && t.okxKey); }
+function okxFileUrl(u){ var t = S.set || {}; return String(t.okxUrl).replace(/\/+$/, '') + '/file?k=' + encodeURIComponent(t.okxKey) + '&u=' + encodeURIComponent(u); }
+function orderDir(o){ return o.side === 'sell' ? 'in' : 'out'; }
+function orderDate(o){ return o.created ? dstr(new Date(Number(o.created))) : today(); }
+function orderTitle(o){ return (o.side === 'sell' ? 'Продажа' : 'Покупка') + ' ' + money(o.fiat || 0) + (o.counterparty ? ' · ' + o.counterparty : ''); }
+function attentionHtml(){
+  var list = S.orders.filter(function(o){ return o.need && !o.done; }).sort(function(a, b){ return (b.created || 0) - (a.created || 0); });
+  if (!list.length) return '';
+  return '<section class="attn"><h2><span>Требует внимания · OKX</span><span>' + list.length + '</span></h2>' + list.map(function(o){
+    var t = o.created ? new Date(Number(o.created)) : null;
+    return '<button class="ao" data-ord="' + esc(o.id) + '"><span class="oic">' + (o.side === 'sell' ? ARR_IN : ARR_OUT) + '</span><span class="mid"><span class="t1">' + esc(orderTitle(o)) + '</span><span class="t2">' + esc((t ? shortDate(dstr(t)) + ' ' + pad2(t.getHours()) + ':' + pad2(t.getMinutes()) + ' · ' : '') + (o.needWhy || 'Выбери карту')) + '</span></span><svg class="chev" style="width:18px;height:18px;color:var(--muted)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></button>';
+  }).join('') + '</section>';
+}
+function okxRowHtml(){
+  var b = S.bot || {}, on = okxOn(), age = b.lastRun ? Math.round((Date.now() - b.lastRun) / 60000) : null;
+  var col = !on ? 'var(--muted)' : (age !== null && age <= 3 && !(b.lastErrorAt && b.lastErrorAt > (b.lastRun || 0))) ? 'var(--ok)' : 'var(--warn)';
+  var txt = !on ? 'не подключён' : age === null ? 'сервер ещё не выходил на связь' : (b.lastErrorAt && b.lastErrorAt > b.lastRun ? 'ошибка: ' + (b.lastError || '') : 'проверял ' + (age < 1 ? 'только что' : age + ' мин назад'));
+  return '<div class="kv" style="margin-top:10px"><span>OKX</span><span class="okxst"><i style="background:' + col + '"></i>' + esc(txt) + '</span></div><div class="stack" style="margin-top:8px"><button class="btn ghost sm" data-act="okx">' + (on ? 'Настроить OKX' : 'Подключить OKX') + '</button></div>';
+}
+function openOkx(){
+  var t = S.set || {};
+  $('#kxUrl').value = t.okxUrl || ''; $('#kxKey').value = t.okxKey || '';
+  $('#kxSt').textContent = ''; var off = $('#kxOff'); off.hidden = !okxOn(); off.classList.remove('armed'); off.textContent = 'Отключить OKX';
+  openSheet('sOkx');
+}
+function okxCall(path, url, key){ return fetch(String(url).replace(/\/+$/, '') + path, {headers:{'x-app-key':key}}).then(function(r){ return r.json().then(function(j){ if (!r.ok || j.ok === false) throw new Error(j.error || ('ошибка ' + r.status)); return j; }); }); }
+$('#kxSave').addEventListener('click', function(){
+  var url = $('#kxUrl').value.trim().replace(/\/+$/, ''), key = $('#kxKey').value.trim();
+  if (!/^https:\/\/[^\s]+$/.test(url)){ shake($('#kxUrl').parentNode); toast('Адрес сервера начинается с https://'); return; }
+  if (!key){ shake($('#kxKey').parentNode); toast('Впиши ключ приложения'); return; }
+  $('#kxSt').textContent = 'Проверяю связь с сервером…';
+  if (DEMO){ $('#kxSt').textContent = 'В демо сервер не проверяется.'; return; }
+  okxCall('/sync', url, key).then(function(j){
+    var r = j.result || {};
+    var p = {okxUrl:url, okxKey:key}; if (!(S.set || {}).okxSince) p.okxSince = Date.now();
+    store.setSettings(p).catch(dbErr); S.set = Object.assign({}, S.set, p);
+    $('#kxSt').textContent = 'Связь есть. Проверено ордеров: ' + (r.checked || 0) + (r.errors && r.errors.length ? '. Ошибки: ' + r.errors.join('; ') : '.');
+    toast('OKX подключён');
+  }).catch(function(e){ $('#kxSt').textContent = 'Не получилось: ' + e.message; });
+});
+$('#kxSync').addEventListener('click', function(){
+  if (!okxOn()){ toast('Сначала сохрани адрес и ключ'); return; }
+  $('#kxSt').textContent = 'Забираю ордера…';
+  okxCall('/sync', S.set.okxUrl, S.set.okxKey).then(function(j){ var r = j.result || {}; $('#kxSt').textContent = 'Готово: ордеров ' + (r.checked || 0) + ', новых ' + (r.newOrders || 0) + ', квитанций ' + (r.receipts || 0) + '.'; }).catch(function(e){ $('#kxSt').textContent = 'Ошибка: ' + e.message; });
+});
+$('#kxOff').addEventListener('click', function(){
+  if (!arm($('#kxOff'), 'Нажми ещё раз, чтобы отключить')) return;
+  store.setSettings({okxUrl:'', okxKey:''}).catch(dbErr); S.set = Object.assign({}, S.set, {okxUrl:'', okxKey:''}); toast('OKX отключён'); closeSheet();
+});
+
+/* обработка: квитанция → карта; сумма, дата и направление — из ордера */
+var procBusy = false;
+function processOrders(){
+  if (procBusy || DEMO || !store || !okxOn() || !S.ready.c || !S.ready.o) return;
+  var since = (S.set || {}).okxSince || Date.now();
+  // отменённый ордер, по которому уже была запись — убираем запись
+  S.orders.forEach(function(o){
+    if (o.status === 'cancelled' && o.done && o.opIds && o.opIds.length && !o.undone){
+      o.undone = true;
+      o.opIds.forEach(function(id){ store.del('lops', id).catch(function(){}); });
+      store.patch('lorders', o.id, {undone:true}).catch(dbErr);
+      tgSend('↩️ Ордер отменён, запись убрана: ' + orderTitle(o));
+      toast('Ордер отменён, запись убрана');
+    }
+  });
+  var todo = S.orders.filter(function(o){
+    if (o.done || o.need || o.status === 'cancelled') return false;
+    if ((o.created || o.firstSeen || 0) < since) return false;
+    if (o.fiatCurrency && o.fiatCurrency !== 'UAH') return false;
+    if (o.claimBy && o.claimBy !== DEV && Date.now() - (o.claimAt || 0) < 120000) return false;
+    return (o.receipts && o.receipts.length) || o.status === 'completed';
+  }).sort(function(a, b){ return (a.created || 0) - (b.created || 0); });
+  if (!todo.length) return;
+  procBusy = true;
+  var o = todo[0];
+  store.claim(o.id, DEV).then(function(ok){
+    if (!ok) return;
+    if (!o.receipts || !o.receipts.length) return markNeed(o, 'Ордер завершён без квитанции в чате');
+    var rc = o.receipts[o.receipts.length - 1].url;
+    return fetch(okxFileUrl(rc)).then(function(r){ if (!r.ok) throw new Error('файл ' + r.status); return r.blob(); })
+      .then(function(blob){
+        if (/pdf/.test(blob.type)) return readPdf(new File([blob], 'r.pdf', {type:'application/pdf'})).then(function(x){ return x.text; });
+        return getWorker().then(function(w){ return w.recognize(blob); }).then(function(x){ return x && x.data ? x.data.text : ''; });
+      })
+      .then(function(text){
+        var p = parseReceipt(text), hits = matchCards(p), want = orderDir(o);
+        var h = hits.filter(function(x){ return x.dir === want; })[0] || hits.filter(function(x){ return !x.dir; })[0] || (hits.length === 1 ? hits[0] : null);
+        if (!h) return markNeed(o, p.cards.length ? 'Карта ••' + p.cards.map(function(c){ return c.last4; }).join(', ••') + ' не найдена в базе' : 'Не удалось прочитать карту с квитанции');
+        var sp = {dir:want, card:h.c.id, amount:o.fiat, date:orderDate(o), note:'OKX ' + (o.counterparty || '') + ' #' + String(o.orderId).slice(-6), src:'okx', lim:true};
+        if (!(sp.amount > 0)) return markNeed(o, 'В ордере нет суммы');
+        var ids = commitOp(sp);
+        store.patch('lorders', o.id, {done:true, need:false, opIds:ids, card:h.c.id, doneAt:Date.now(), doneHow:'auto'}).catch(dbErr);
+        notifyRecord(sp);
+        showUndo('OKX: ' + doneMsg(sp), ids);
+      });
+  }).catch(function(e){
+    console.error(e);
+    return markNeed(o, 'Не получилось обработать квитанцию: ' + (e && e.message || 'ошибка'));
+  }).then(function(){ procBusy = false; setTimeout(processOrders, 400); });
+}
+function markNeed(o, why){
+  o.need = true;
+  if ((S.set || {}).tgFail !== false) tgSend('❓ ' + orderTitle(o) + '\n' + why + '. Открой «Лимиты» → «Требует внимания».');
+  return store.patch('lorders', o.id, {need:true, needWhy:why}).catch(dbErr);
+}
+function openOrder(o){
+  openOp(null);
+  OP.okx = o.id; OP.src = 'okx'; OP.dir = orderDir(o);
+  $('#oTitle').textContent = orderTitle(o);
+  $('#oAmt').value = kopIn(o.fiat || 0); $('#oDate').value = orderDate(o);
+  $('#oNote').value = 'OKX ' + (o.counterparty || '') + ' #' + String(o.orderId).slice(-6);
+  $('#oDrop').hidden = true; $('#oOrdSkip').hidden = false; $('#oOrdSkip').classList.remove('armed'); $('#oOrdSkip').textContent = 'Не учитывать этот ордер';
+  if (o.receipts && o.receipts.length && okxOn()){
+    $('#oOcr').hidden = false; $('#oImg').src = okxFileUrl(o.receipts[o.receipts.length - 1].url);
+    setOcr('warn', o.needWhy || 'Выбери карту', 'Квитанция из чата ордера. Выбери карту и нажми «Сохранить».', 0);
+  } else if (o.needWhy){ $('#oOcr').hidden = false; $('#oImg').hidden = true; setOcr('warn', o.needWhy, 'Выбери карту, на которую ' + (o.side === 'sell' ? 'пришли' : 'ушли с') + ' деньги, и нажми «Сохранить».', 0); }
+  syncOp(); renderOpCards();
+}
+$('#oOrdSkip').addEventListener('click', function(){
+  if (!OP.okx) return;
+  if (!arm($('#oOrdSkip'), 'Нажми ещё раз: ордер не попадёт в лимиты')) return;
+  store.patch('lorders', OP.okx, {done:true, need:false, skipped:true, doneAt:Date.now()}).catch(dbErr);
+  toast('Ордер пропущен'); closeSheet();
+});
+setInterval(processOrders, 30000);
+
 /* ============ Telegram ============ */
 var TG = null;
 function openTg(){
@@ -1560,10 +1722,11 @@ document.addEventListener('click', function(e){
   if (cp && !cp.closest('.sheet')){ e.stopPropagation(); return doCopy(cp); }
   var eb = e.target.closest('[data-bal]');
   if (eb && !eb.closest('.sheet')){ var bc = byId(S.cards, eb.getAttribute('data-bal')); if (bc) editBal(bc); return; }
-  var t = e.target.closest('[data-tab],[data-card],[data-op],[data-hold],[data-act],[data-sort],[data-m],[data-hd],[data-th],[data-sh],[data-person]');
+  var t = e.target.closest('[data-tab],[data-card],[data-op],[data-hold],[data-act],[data-sort],[data-m],[data-hd],[data-th],[data-sh],[data-person],[data-ord]');
   if (!t || t.closest('.sheet')) return;
   if (t.hasAttribute('data-tab')) return go(t.getAttribute('data-tab'));
   if (t.hasAttribute('data-person')) return openPerson(t.getAttribute('data-person'));
+  if (t.hasAttribute('data-ord')){ var od = byId(S.orders, t.getAttribute('data-ord')); if (od) openOrder(od); return; }
   if (t.hasAttribute('data-card')){ var c = byId(S.cards, t.getAttribute('data-card')); if (c) openCard(c); return; }
   if (t.hasAttribute('data-op')){ var o = byId(S.ops, t.getAttribute('data-op')); if (o) openOp(o); return; }
   if (t.hasAttribute('data-hold')){ S.holder = t.getAttribute('data-hold'); return render(); }
@@ -1577,6 +1740,7 @@ document.addEventListener('click', function(e){
   if (a === 'back') return leavePerson();
   if (a === 'auto'){ store.setSettings({auto:(S.set || {}).auto === false}).catch(dbErr); S.set = Object.assign({}, S.set, {auto:(S.set || {}).auto === false}); return render(); }
   if (a === 'tg') return openTg();
+  if (a === 'okx') return openOkx();
   if (a === 'sort'){ var i = SORTS.indexOf(PR.sort); PR.sort = SORTS[(i + 1) % SORTS.length]; PR.dir = (PR.sort === 'holder') ? 1 : -1; savePrefs(); return render(); }
   if (a === 'reset'){ store.reset(); toast('Примеры возвращены'); return; }
   if (a === 'logout'){ if (window.firebase) firebase.auth().signOut(); return; }
@@ -1598,7 +1762,9 @@ $('#fab').addEventListener('click', function(){
 var unlisten = null;
 function show(id){ ['splash','login','denied','main'].forEach(function(x){ document.getElementById(x).hidden = x !== id; }); }
 function onData(c, list){
-  if (c === 'set'){ S.set = list || {}; if (S.ready.c && S.ready.o && S.view === 'settings') queueRender(); return; }
+  if (c === 'set'){ S.set = list || {}; if (S.ready.c && S.ready.o && S.view === 'settings') queueRender(); setTimeout(processOrders, 0); return; }
+  if (c === 'orders'){ S.orders = (list || []).filter(function(o){ return o && o.orderId; }); queueRender(); setTimeout(processOrders, 0); return; }
+  if (c === 'bot'){ S.bot = list || {}; if (S.view === 'settings') queueRender(); return; }
   if (c === 'cards'){ S.cards = list.filter(function(k){ return k && typeof k === 'object'; }).sort(function(a, b){ return (a.ts || 0) - (b.ts || 0); }); S.ready.c = true; }
   else { S.ops = list.filter(function(o){ return o && typeof o.amount === 'number' && o.date && o.card; }); S.ready.o = true; }
   queueRender();
@@ -1648,7 +1814,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:' && window.top
 setInterval(function(){ if (shown && !openSh && document.visibilityState === 'visible' && S.view === 'cards' && !(document.activeElement && document.activeElement.id === 'q')) render(); }, 10 * 60 * 1000);
 
 window.__parseReceipt = parseReceipt;
-if (window.__PREVIEW__){ window.__test = function(t){ OP.src = "receipt"; applyParsed(parseReceipt(t)); }; window.__bal = function(id){ return cardBal(byId(S.cards, id)) / 100; }; }
+if (window.__PREVIEW__){ window.__proc = function(){ DEMO = false; procBusy = false; processOrders(); }; window.__S = S; window.__test = function(t){ OP.src = "receipt"; applyParsed(parseReceipt(t)); }; window.__bal = function(id){ return cardBal(byId(S.cards, id)) / 100; }; }
 })();
 </script>
 </body>
