@@ -1620,7 +1620,7 @@ function processOrders(){
   var todo = S.orders.filter(function(o){
     if (o.done || o.need || o.status === 'cancelled') return false;
     if ((o.created || o.firstSeen || 0) < since) return false;
-    if (o.fiatCurrency && o.fiatCurrency !== 'UAH') return false;
+    if (o.fiatCurrency && String(o.fiatCurrency).toUpperCase() !== 'UAH') return false;
     if (o.claimBy && o.claimBy !== DEV && Date.now() - (o.claimAt || 0) < 120000) return false;
     return (o.receipts && o.receipts.length) || o.status === 'completed';
   }).sort(function(a, b){ return (a.created || 0) - (b.created || 0); });
