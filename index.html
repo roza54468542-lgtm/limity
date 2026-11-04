@@ -468,6 +468,14 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
 .tbl .who .bk{margin-bottom:3px}
 .oc .t1 .bk{margin-right:6px;vertical-align:1px}
 
+/* ---------- человек ---------- */
+.pinfo{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:var(--r-lg);padding:12px 14px;width:100%;text-align:left}
+.pinfo .mid{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.pinfo .t1{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pinfo .t2{font-size:12.5px;color:var(--muted)}
+.pinfo .ed{font-size:13px;font-weight:700;color:var(--accent);flex:none}
+.pinfo.empty-p .t1{color:var(--muted);font-weight:500}
+
 /* ---------- счета ФОП ---------- */
 .fops{display:flex;flex-direction:column;gap:10px}
 .fop{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:var(--r-lg);padding:14px 14px 14px 16px;width:100%;text-align:left;position:relative;overflow:hidden;transition:transform .15s var(--ease)}
@@ -691,6 +699,10 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
     <div class="col"><div class="fl">Банк</div><label class="field"><input id="cBank" type="text" maxlength="30" list="dlBanks" placeholder="Монобанк" autocomplete="off"></label></div>
   </div>
   <datalist id="dlHolders"></datalist>
+  <div class="grid2" id="cPers">
+    <div class="col"><div class="fl">ФИО владельца</div><label class="field"><input id="cFio" type="text" maxlength="80" placeholder="Прізвище Ім'я По батькові" autocomplete="off"></label></div>
+    <div class="col"><div class="fl">ІПН</div><label class="field"><input id="cInn" class="mono" type="text" inputmode="numeric" maxlength="10" placeholder="10 цифр" autocomplete="off"></label></div>
+  </div>
   <datalist id="dlBanks"><option value="Монобанк"><option value="ПриватБанк"><option value="ПУМБ"><option value="А-Банк"><option value="Sense Bank"><option value="Ощадбанк"><option value="Райффайзен"><option value="Укрсиббанк"><option value="Izibank"><option value="Таскомбанк"><option value="Глобус"><option value="Восток"></datalist>
   <div class="col"><div class="fl">Номер карты</div><label class="field"><input id="cNum" class="mono" type="text" inputmode="numeric" maxlength="19" placeholder="0000 0000 0000 0000" autocomplete="off"></label></div>
   <div class="grid2">
@@ -710,6 +722,17 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
   </div>
   <button class="btn" id="cSave" type="button">Сохранить</button>
   <button class="btn danger" id="cDel" type="button" hidden>Удалить карту</button>
+</section>
+
+<!-- Человек -->
+<section class="sheet" id="sPers" role="dialog" aria-modal="true" aria-labelledby="pTitle">
+  <div class="grab"></div>
+  <div class="sh-h"><h3 id="pTitle">Человек</h3><button class="x" data-close aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="col"><div class="fl">Имя в приложении</div><label class="field"><input id="pName" type="text" maxlength="30" autocomplete="off"></label></div>
+  <div class="col"><div class="fl">ФИО (как в банке)</div><label class="field"><input id="pFio" type="text" maxlength="80" placeholder="Прізвище Ім'я По батькові" autocomplete="off"></label></div>
+  <div class="col"><div class="fl">ІПН</div><label class="field"><input id="pInn" class="mono" type="text" inputmode="numeric" maxlength="10" placeholder="10 цифр" autocomplete="off"></label></div>
+  <p class="note" style="margin:0">По ФИО и ІПН приложение узнаёт человека на квитанции, даже если номера карты там нет.</p>
+  <button class="btn" id="pSave" type="button">Сохранить</button>
 </section>
 
 <!-- ФОП: выбор назначения -->
@@ -983,6 +1006,11 @@ function holders(){
   var h = {}; S.cards.forEach(function(c){ var n = (c.holder || '').trim() || 'Без имени'; h[n] = (h[n] || 0) + 1; });
   return Object.keys(h).sort(function(a, b){ return (a === ME ? -1 : b === ME ? 1 : 0) || h[b] - h[a] || a.localeCompare(b); }).map(function(k){ return [k, h[k]]; });
 }
+function personOf(name){ var pp = (S.set || {}).people || {}; return pp[String(name || '').trim()] || {}; }
+function savePerson(name, d){
+  var all = Object.assign({}, (S.set || {}).people || {}); all[name] = Object.assign({}, all[name] || {}, d);
+  S.set = Object.assign({}, S.set, {people:all}); return store.setSettings({people:all}).catch(dbErr);
+}
 function cardLabel(c){ return (c.holder || 'Без имени') + ' · ' + (c.bank || 'Банк') + ' ••' + last4(c); }
 function visibleCards(){
   var q = S.q.trim().toLowerCase(), qd = digits(q);
@@ -1143,7 +1171,9 @@ function vPerson(){
   if (!mine.length && !myF.length){ S.person = null; return vPeople(); }
   S.holder = S.person;
   var h = '<div class="crumb"><button class="iconbtn" data-act="back" aria-label="Ко всем людям">' + IC_L + '</button><span>Все люди</span></div>';
-  h += heroHtml(mine, 'Отправлено за ');
+  var pr = personOf(S.person);
+  h += '<button class="pinfo' + (pr.fio || pr.inn ? '' : ' empty-p') + '" data-act="editpers" type="button"><span class="mid"><span class="t1">' + esc(pr.fio || 'ФИО и ІПН не указаны') + '</span><span class="t2 mono">' + (pr.inn ? 'ІПН ' + esc(pr.inn) : 'Добавь — так квитанции без номера карты узнаются точнее') + '</span></span><span class="ed">' + (pr.fio || pr.inn ? 'Изменить' : 'Добавить') + '</span></button>';
+  if (mine.length) h += heroHtml(mine, 'Отправлено за ');
   h += '<div class="filters"><div class="frow"><label class="field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg><input id="q" type="search" placeholder="Банк или цифры карты" value="' + esc(S.q) + '" autocomplete="off"></label>' +
     '<button class="sortb" data-act="sort" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg>' + {pct:'По %', left:'По остатку', holder:'По имени', adv:'По совету', out:'По сумме', lim:'По лимиту', in:'По получению', bank:'По банку', bal:'По балансу'}[PR.sort] + '</button></div></div>';
   if (myF.length && !S.q.trim()) h += '<div class="sec"><span>Счета ФОП</span><span>' + myF.length + '</span></div><div class="fops">' + myF.map(fopTile).join('') + '</div><div class="sec"><span>Карты</span><span>' + mine.length + '</span></div>';
@@ -1687,7 +1717,69 @@ function parseReceipt(raw){
   }
   dates.sort(function(a, b){ return b.s - a.s; });
   if (dates.length) res.date = dates[0].d;
+  res.low = low; res.dirAt = dirAt;
   return res;
+}
+/* имя → основы для поиска в квитанции (Настя → анастас, Артём → артем) */
+function nrm(s){ return String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/[іїиы]/g, 'и').replace(/[єэ]/g, 'е').replace(/ґ/g, 'г'); }
+var NICK = {'настя':['анастас'],'саша':['олександр','александр'],'дима':['дмитр'],'женя':['евген'],'катя':['катерин','екатерин'],'леша':['олекси','алексе'],'макс':['максим'],'вова':['володимир','владимир'],'ваня':['иван'],'таня':['тетян','татян'],'юля':['юли'],'оля':['ольг'],'аня':['анн','ганн'],'маша':['мари'],'коля':['микол','никол'],'сережа':['серги','серге'],'миша':['михаил','михайл'],'артем':['артем','артьом'],'витя':['виктор'],'паша':['павл','павел'],'андрюха':['андри','андре'],'даша':['дари','дар'],'лена':['олен','елен'],'вика':['виктори'],'ира':['ирин'],'наташа':['натал'],'света':['светлан','свитлан'],'игорь':['игор'],'рома':['роман'],'денис':['денис'],'влад':['владислав','влад']};
+function nameStems(holder){
+  var out = [];
+  nrm(holder).replace(/[ь'’ʼ`]/g, '').split(/[^a-zа-я]+/).forEach(function(w){ if (w.length < 3) return; out.push(w.length > 5 ? w.slice(0, 5) : w); (NICK[w] || []).forEach(function(x){ out.push(x); }); });
+  return out;
+}
+function bankRx(name){
+  for (var i = 0; i < BANKS.length; i++) if (BANKS[i][0].test(name)) return BANKS[i][0];
+  var k = bankKey(name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); return k ? new RegExp(k, 'i') : null;
+}
+/* номера карты на квитанции нет — ищем по банку и имени владельца */
+function idHits(parsed){
+  /* человек по ІПН или полному ФИО → его карта (по банку в том же блоке, или единственная) */
+  var low = parsed.low, nl = nrm(low), hits = [], pp = (S.set || {}).people || {};
+  var inns = [], m, ri = /(?:^|\D)(\d{10})(?!\d)/g;
+  while ((m = ri.exec(low))) inns.push({v:m[1], pos:m.index + m[0].length - 10});
+  Object.keys(pp).forEach(function(name){
+    var pr = pp[name]; if (!pr) return;
+    var ids = {};                                  // блок → сила совпадения
+    if (pr.inn) inns.forEach(function(x){ if (x.v === pr.inn){ var d = parsed.dirAt(x.pos) || 'none'; ids[d] = Math.max(ids[d] || 0, 1); } });
+    if (pr.fio){
+      var ws = nrm(pr.fio).replace(/[ь'’ʼ`]/g, '').split(/[^a-zа-я]+/).filter(function(w){ return w.length >= 3; }).map(function(w){ return w.slice(0, Math.max(4, w.length - 2)); });
+      if (ws.length >= 2){
+        var sur = ws[0], i = -1;
+        while ((i = nl.indexOf(sur, i + 1)) > -1){
+          var win = nl.slice(i, i + 60);
+          if (ws.slice(1).some(function(w){ return win.indexOf(w) > -1; })){ var d2 = parsed.dirAt(i) || 'none'; ids[d2] = Math.max(ids[d2] || 0, .75); }
+        }
+      }
+    }
+    var own = S.cards.filter(function(c){ return holderOf(c) === name; }), act = own.filter(function(c){ return !c.off; });
+    Object.keys(ids).forEach(function(d){
+      var cand = own.map(function(c){
+        var rx = bankRx(c.bank), bankHere = false;
+        if (rx){ var g = new RegExp(rx.source, 'gi'), mm; while ((mm = g.exec(low))){ if ((parsed.dirAt(mm.index) || 'none') === d){ bankHere = true; break; } if (!mm[0].length) break; } }
+        return {c:c, bank:bankHere};
+      });
+      var withBank = cand.filter(function(x){ return x.bank; });
+      var pick = withBank.length ? withBank : (act.length === 1 ? cand.filter(function(x){ return x.c === act[0]; }) : cand);
+      pick.forEach(function(x){ hits.push({c:x.c, dir:d === 'none' ? null : d, score:1 + ids[d] + (x.bank ? .3 : 0) + (x.c.off ? 0 : .05), guess:true, named:true, byId:true}); });
+    });
+  });
+  return hits;
+}
+function guessCards(parsed){
+  if (!parsed || !parsed.low || !parsed.dirAt) return [];
+  var low = parsed.low, nl = nrm(low), hits = idHits(parsed);
+  S.cards.forEach(function(c){
+    var rx = bankRx(c.bank); if (!rx) return;
+    var g = new RegExp(rx.source, 'gi'), m, dirs = {};
+    while ((m = g.exec(low))){ dirs[parsed.dirAt(m.index) || 'none'] = 1; if (!m[0].length) break; }
+    if (!Object.keys(dirs).length) return;
+    // имя владельца ищем в том же блоке («Відправник» / «Одержувач»), где стоит банк
+    var nameDirs = {}, pf = personOf(c.holder).fio;
+    nameStems(c.holder + (pf ? ' ' + pf.split(/\s+/).slice(1, 2).join(' ') : '')).forEach(function(st){ var i = -1; while ((i = nl.indexOf(st, i + 1)) > -1) nameDirs[parsed.dirAt(i) || 'none'] = 1; });
+    Object.keys(dirs).forEach(function(d){ var named = !!nameDirs[d]; if (d === 'none' && !named) return; /* банк в шапке без имени рядом — это не про карту */ hits.push({c:c, dir:d === 'none' ? null : d, score:(named ? 0.8 : 0.3) + (c.off ? 0 : 0.1), guess:true, named:named}); });
+  });
+  return hits;
 }
 function matchCards(parsed){
   var hits = [], seenC = {};
@@ -1705,6 +1797,17 @@ function matchCards(parsed){
       if (seenC[key] && seenC[key].score >= score) return;
       var h = {c:c, dir:k.dir, score:score}; seenC[key] = h; hits.push(h);
     });
+  });
+  hits.sort(function(a, b){ return b.score - a.score; });
+  if (hits.length) return hits;
+  /* запасной путь: банк + имя. Берём только если подходит ровно одна карта */
+  var gs = guessCards(parsed), byDir = {};
+  gs.forEach(function(h){ var k = h.dir || 'none'; (byDir[k] = byDir[k] || []).push(h); });
+  Object.keys(byDir).forEach(function(k){
+    var list = byDir[k], top = Math.max.apply(null, list.map(function(h){ return h.score; }));
+    var best = list.filter(function(h){ return h.score === top; });
+    if (best.length === 1) hits.push(best[0]);
+    else parsed.guessWhy = 'на квитанции нет номера карты, а подходит несколько: ' + best.map(function(h){ return h.c.bank + ' ••' + last4(h.c); }).join(', ');
   });
   hits.sort(function(a, b){ return b.score - a.score; });
   return hits;
@@ -1726,6 +1829,8 @@ function applyParsed(p){
   var sp = readOpForm();
   var dupe = sp.dir !== 'xfer' && sp.amount > 0 && sp.card && isDupe(sp.card, sp.dir, sp.amount, sp.date);
   if (dupe){ $('#oDupe').hidden = false; $('#oDupe').textContent = 'Похоже, эта квитанция уже записана: такая же сумма и дата по этой карте. Сохрани, только если это другой перевод.'; }
+  var guessed = (outH && outH.guess) || (inH && inH.guess) || (!outH && !inH && hits[0] && hits[0].guess);
+  if (guessed){ found[0] = found[0] + ' — по банку и имени'; if (!matchOrder(sp)) sure = false; }
   if (hits.length && p.amount && sure && auto && !dupe){
     var ids = commitOp(sp); notifyRecord(sp); vib(15);
     var om = matchOrder(sp); if (om){ store.patch('lorders', om.id, {done:true, need:false, opIds:ids, card:sp.card, doneAt:Date.now(), doneHow:'share'}).catch(dbErr); om.done = true; found.push('ордер OKX закрыт'); }
@@ -1734,9 +1839,9 @@ function applyParsed(p){
     setTimeout(function(){ if (OQ.length) nextReceipt(); else if (openSh && openSh.id === 'sOp') closeSheet(); }, 1100);
     return;
   }
-  if (hits.length && p.amount) setOcr('ok', 'Нашёл: ' + found.join(', '), sure ? 'Проверь и нажми «Сохранить».' : 'Не понял, это приход или уход. Выбери вверху и сохрани.', 0);
+  if (hits.length && p.amount) setOcr('ok', 'Нашёл: ' + found.join(', '), guessed ? 'Номера карты на квитанции нет, карту определил по банку и имени. Проверь и нажми «Сохранить».' : sure ? 'Проверь и нажми «Сохранить».' : 'Не понял, это приход или уход. Выбери вверху и сохрани.', 0);
   else {
-    var why = hits.length ? 'Сумма не найдена, впиши её.' : (p.cards.length ? 'Карта ••' + p.cards[0].last4 + ' не найдена в базе. Выбери карту вручную.' : 'Номер карты не виден, выбери вручную.');
+    var why = hits.length ? 'Сумма не найдена, впиши её.' : (p.cards.length ? 'Карта ••' + p.cards[0].last4 + ' не найдена в базе. Выбери карту вручную.' : p.guessWhy ? cap(p.guessWhy) + '. Выбери вручную.' : 'Номер карты не виден, выбери вручную.');
     if (found.length) setOcr('warn', 'Нашёл не всё: ' + found.join(', '), why, 0);
     else setOcr('warn', 'Не нашёл данные на скрине', 'Заполни вручную. Лучше скрин целиком, без обрезки.', 0);
     if ((S.set || {}).tgFail !== false) tgSend('❓ Квитанция не распознана. ' + why + (found.length ? '\nНашёл: ' + found.join(', ') : '') + '\nОткрой «Лимиты», чтобы дописать.');
@@ -1762,6 +1867,7 @@ function openCard(c){
   CD = c ? {id:c.id, orig:c, off:!!c.off} : {id:null, orig:null, off:false};
   $('#cTitle').textContent = c ? (c.holder || '') + ' · ' + (c.bank || '') : 'Новая карта';
   $('#cHolder').value = c ? (c.holder || '') : (S.person || '');
+  fillPers();
   $('#cBank').value = c ? (c.bank || '') : ''; $('#cNum').value = c ? fmtCard(c.number) : '';
   $('#cOut').value = c ? kopIn(c.limOut) : ''; $('#cIn').value = c ? kopIn(c.limIn) : '';
   var cb = c ? cardBal(c) : null; CD.balWas = cb; $('#cBal').value = cb !== null ? kopIn(cb) : '';
@@ -1778,6 +1884,9 @@ function openCard(c){
   syncCard(); openSheet('sCard');
 }
 function syncCard(){ setSeg($('#cStatus'), CD.off ? 1 : 0); pressSet($('#cStatus'), 'data-cs', CD.off ? 'off' : 'on'); }
+function fillPers(){ var pr = personOf($('#cHolder').value); $('#cFio').value = pr.fio || ''; $('#cInn').value = pr.inn || ''; }
+$('#cHolder').addEventListener('change', fillPers);
+$('#cInn').addEventListener('input', function(e){ var d = digits(e.target.value).slice(0, 10); if (d !== e.target.value) e.target.value = d; });
 $('#cStatus').addEventListener('click', function(e){ var b = e.target.closest('[data-cs]'); if (b){ CD.off = b.getAttribute('data-cs') === 'off'; syncCard(); } });
 $('#cNum').addEventListener('input', function(e){ var el = e.target, d = digits(el.value).slice(0, 16), f = fmtCard(d); if (f !== el.value) el.value = f; });
 $('#cSave').addEventListener('click', function(){
@@ -1788,6 +1897,10 @@ $('#cSave').addEventListener('click', function(){
   if (num.length !== 16){ shake($('#cNum').parentNode); toast('Номер карты: 16 цифр'); return; }
   if (isNaN(lo) || isNaN(li)){ toast('Лимит впиши цифрами, например 150000'); return; }
   if (S.cards.some(function(c){ return c.id !== CD.id && digits(c.number) === num; })){ toast('Такая карта уже есть в базе'); return; }
+  var fio = $('#cFio').value.trim().replace(/\s+/g, ' '), inn = digits($('#cInn').value);
+  if (inn && inn.length !== 10){ shake($('#cInn').parentNode); toast('ІПН — 10 цифр'); return; }
+  var prv = personOf(holder);
+  if ((fio || inn) && (fio !== (prv.fio || '') || inn !== (prv.inn || ''))) savePerson(holder, {fio:fio, inn:inn});
   var bv = $('#cBal').value.trim() ? parseMoney($('#cBal').value) : null;
   if (bv !== null && isNaN(bv)){ shake($('#cBal').parentNode); toast('Баланс впиши цифрами'); return; }
   var d = {holder:holder, bank:bank, number:num, limOut:lo, limIn:li, off:CD.off}, p;
@@ -1931,7 +2044,8 @@ function processOrders(){
       .then(function(text){
         var p = parseReceipt(text), hits = matchCards(p), want = orderDir(o);
         var h = hits.filter(function(x){ return x.dir === want; })[0] || hits.filter(function(x){ return !x.dir; })[0] || (hits.length === 1 ? hits[0] : null);
-        if (!h) return markNeed(o, p.cards.length ? 'Карта ••' + p.cards.map(function(c){ return c.last4; }).join(', ••') + ' не найдена в базе' : 'Не удалось прочитать карту с квитанции');
+        if (!h) return markNeed(o, p.cards.length ? 'Карта ••' + p.cards.map(function(c){ return c.last4; }).join(', ••') + ' не найдена в базе' : p.guessWhy ? cap(p.guessWhy) : 'На квитанции нет номера карты и не нашёл банк из твоей базы');
+        if (h.guess && !(p.amount && o.fiat && Math.abs(p.amount - o.fiat) <= Math.max(o.fiat * 0.03, 10000))) return markNeed(o, 'Похоже на ' + h.c.bank + ' ••' + last4(h.c) + ' (по банку и имени), но сумма на квитанции не совпала — проверь');
         var close = p.amount && o.fiat && Math.abs(p.amount - o.fiat) <= Math.max(o.fiat * 0.03, 10000);
         // квитанция найдена по времени в общем чате — пишем только если сумма совпала
         if (o.rcGuess && !close) return markNeed(o, 'Нашёл квитанцию в чате, но сумма ' + (p.amount ? kopIn(p.amount) + ' ₴' : '?') + ' не совпала с ордером');
@@ -2010,6 +2124,32 @@ function takeShared(){
     });
   }).then(function(files){ if (files.length) startReceipts(files); }).catch(function(e){ console.error(e); });
 }
+
+/* ============ человек: ФИО, ІПН, переименование ============ */
+var PE = null;
+function openPers(name){
+  PE = name; var pr = personOf(name);
+  $('#pTitle').textContent = name; $('#pName').value = name; $('#pFio').value = pr.fio || ''; $('#pInn').value = pr.inn || '';
+  openSheet('sPers');
+}
+$('#pInn').addEventListener('input', function(e){ var d = digits(e.target.value).slice(0, 10); if (d !== e.target.value) e.target.value = d; });
+$('#pSave').addEventListener('click', function(){
+  var nn = $('#pName').value.trim().slice(0, 30), fio = $('#pFio').value.trim().replace(/\s+/g, ' '), inn = digits($('#pInn').value);
+  if (!nn){ shake($('#pName').parentNode); toast('Впиши имя'); return; }
+  if (inn && inn.length !== 10){ shake($('#pInn').parentNode); toast('ІПН — 10 цифр'); return; }
+  var dupInn = inn && Object.keys((S.set || {}).people || {}).filter(function(k){ return k !== PE && personOf(k).inn === inn; })[0];
+  if (dupInn){ toast('Этот ІПН уже указан у «' + dupInn + '»'); return; }
+  var all = Object.assign({}, (S.set || {}).people || {});
+  if (nn !== PE){
+    S.cards.forEach(function(c){ if (holderOf(c) === PE) store.patch('lcards', c.id, {holder:nn}).catch(dbErr); });
+    var fl = fops().map(function(f){ return (f.owner || '').trim() === PE ? Object.assign({}, f, {owner:nn}) : f; });
+    all[PE] = null; S.set = Object.assign({}, S.set, {fops:fl}); store.setSettings({fops:fl}).catch(dbErr);
+    S.person = nn;
+  }
+  all[nn] = {fio:fio, inn:inn};
+  S.set = Object.assign({}, S.set, {people:all}); store.setSettings({people:all}).catch(dbErr);
+  toast('Сохранено'); closeSheet(); render();
+});
 
 /* ============ счета ФОП ============ */
 var FOP_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>';
@@ -2122,6 +2262,7 @@ document.addEventListener('click', function(e){
   var a = t.getAttribute('data-act');
   if (a === 'newcard') return openCard(null);
   if (a === 'newfop') return openFopEd(null);
+  if (a === 'editpers') return openPers(S.person);
   if (a === 'cureset'){ PR.custom = null; savePrefs(); applyTheme(); return render(); }
   if (a === 'screset'){ PR.scale = null; savePrefs(); return render(); }
   if (a === 'back') return leavePerson();
@@ -2223,7 +2364,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:' && window.top
 }
 setInterval(function(){ if (shown && !openSh && document.visibilityState === 'visible' && S.view === 'cards' && !(document.activeElement && document.activeElement.id === 'q')) render(); }, 10 * 60 * 1000);
 
-window.__parseReceipt = parseReceipt;
+window.__parseReceipt = parseReceipt; window.__match = matchCards;
 if (window.__PREVIEW__){ window.__proc = function(){ DEMO = false; procBusy = false; processOrders(); }; window.__S = S; window.__test = function(t){ OP.src = "receipt"; applyParsed(parseReceipt(t)); }; window.__bal = function(id){ return cardBal(byId(S.cards, id)) / 100; }; }
 })();
 </script>
