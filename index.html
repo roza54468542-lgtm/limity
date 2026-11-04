@@ -369,7 +369,10 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
 .prog{height:4px;border-radius:var(--r-bar);background:var(--bg);overflow:hidden;margin-top:4px}
 .prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
 .queue{font-size:12.5px;color:var(--muted);font-weight:600}
-.optcards{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;padding:1px}
+.optcards{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;padding:1px}
+#oWho .chip{background:var(--surface-2);padding:7px 12px;font-size:13px}
+#oWho .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.ocg{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:6px 2px 0}
 .oc{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:var(--r-md);background:var(--surface-2);text-align:left;width:100%;transition:background .2s,color .2s}
 .oc[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 .oc[aria-pressed="true"] .t2{color:inherit;opacity:.7}
@@ -673,6 +676,7 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
   <div class="dupe" id="oDupe" hidden></div>
   <div class="fl" id="oCardLbl">Карта</div>
   <label class="field" style="height:42px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg><input id="oSearch" type="text" placeholder="Поиск: имя, банк или 4 цифры" autocomplete="off"></label>
+  <div class="chips" id="oWho"></div>
   <div class="optcards" id="oCards"></div>
   <div id="oToWrap" class="stack" hidden>
     <div class="fl">Куда</div>
@@ -1423,21 +1427,33 @@ function openOp(o, opts){
   } else OP = o ? {id:o.id, orig:o, dir:o.dir, card:o.card, to:null, lim:true, src:o.src || 'manual'} : {id:null, dir:'out', card:opts.card || null, to:null, lim:true, src:'manual'};
   $('#oTitle').textContent = o ? (OP.dir === 'xfer' ? 'Перевод между картами' : 'Запись') : 'Новая запись';
   $('#oAmt').value = o ? kopIn(Math.abs(o.amount)) : ''; $('#oDate').value = o ? o.date : today(); $('#oNote').value = o ? (o.note || '') : '';
-  $('#oSearch').value = ''; $('#oOcr').hidden = true; $('#oSkip').hidden = true; $('#oDrop').hidden = !!o; $('#oDupe').hidden = true; $('#oImg').hidden = false; $('#oOrdSkip').hidden = true; OP.okx = null; $('#oRawWrap').hidden = true; $('#oRawBtn').hidden = true; $('#oRawBtn').textContent = 'Показать прочитанный текст';
+  $('#oSearch').value = ''; OPW = opts.who || (S.view === 'cards' && S.person) || 'all'; renderOpWho(); $('#oOcr').hidden = true; $('#oSkip').hidden = true; $('#oDrop').hidden = !!o; $('#oDupe').hidden = true; $('#oImg').hidden = false; $('#oOrdSkip').hidden = true; OP.okx = null; $('#oRawWrap').hidden = true; $('#oRawBtn').hidden = true; $('#oRawBtn').textContent = 'Показать прочитанный текст';
   var d = $('#oDel'); d.hidden = !o; d.classList.remove('armed'); d.textContent = 'Удалить';
   renderOpCards(); syncOp(); if (!opts.keep) openSheet('sOp');
 }
+var OPW = 'all';
+function renderOpWho(){
+  var hs = holders().filter(function(h){ return S.cards.some(function(c){ return holderOf(c) === h[0] && !c.off; }); });
+  if (OPW !== 'all' && !hs.some(function(h){ return h[0] === OPW; })) OPW = 'all';
+  $('#oWho').hidden = hs.length < 2;
+  $('#oWho').innerHTML = '<button type="button" class="chip" data-ow="all" aria-pressed="' + (OPW === 'all') + '">Все</button>' + hs.map(function(h){ return '<button type="button" class="chip" data-ow="' + esc(h[0]) + '" aria-pressed="' + (OPW === h[0]) + '">' + esc(h[0]) + '</button>'; }).join('');
+}
+$('#oWho').addEventListener('click', function(e){ var b = e.target.closest('[data-ow]'); if (!b) return; OPW = b.getAttribute('data-ow'); renderOpWho(); renderOpCards(); });
 function renderOpCards(){
   var q = $('#oSearch').value.trim().toLowerCase(), qd = digits(q);
+  var order = holders().map(function(h){ return h[0]; });
   var list = S.cards.filter(function(c){
     if (c.id === OP.card) return true;
     if (c.off) return false;
+    if (OPW !== 'all' && !q && holderOf(c) !== OPW) return false;
     if (!q) return true;
     return (c.holder || '').toLowerCase().indexOf(q) > -1 || (c.bank || '').toLowerCase().indexOf(q) > -1 || (qd && digits(c.number).indexOf(qd) > -1);
-  }).map(function(c){ return {c:c, s:stat(c)}; }).sort(function(a, b){ return (a.c.id === OP.card ? -1 : b.c.id === OP.card ? 1 : 0) || a.s.p - b.s.p; });
-  $('#oCards').innerHTML = list.length ? list.map(function(x){
-    var c = x.c, s = x.s;
-    return '<button type="button" class="oc" data-oc="' + esc(c.id) + '" style="--hc:' + heat(s.p) + '"><span class="dot"></span><span class="mid"><span class="t1">' + bankBadge(c.bank, 'sm') + esc(c.holder || 'Без имени') + ' ••' + esc(last4(c)) + '</span><span class="t2">' + (s.bal !== null ? 'баланс ' + money(s.bal, true) + ' · ' : '') + 'лимит осталось ' + money(s.left, true) + '</span></span><span class="pc">' + (s.lim ? Math.round(s.p * 100) + '%' : '—') + '</span></button>';
+  }).map(function(c){ return {c:c, s:stat(c)}; }).sort(function(a, b){ return (a.c.id === OP.card ? -1 : b.c.id === OP.card ? 1 : 0) || order.indexOf(holderOf(a.c)) - order.indexOf(holderOf(b.c)) || a.s.p - b.s.p; });
+  var lastH = null, grp = OPW === 'all' && !q;
+  $('#oCards').innerHTML = list.length ? list.map(function(x, i){
+    var c = x.c, s = x.s, hd = '';
+    if (grp && !(i === 0 && c.id === OP.card) && holderOf(c) !== lastH){ lastH = holderOf(c); hd = '<div class="ocg">' + esc(lastH) + '</div>'; }
+    return hd + '<button type="button" class="oc" data-oc="' + esc(c.id) + '" style="--hc:' + heat(s.p) + '"><span class="dot"></span><span class="mid"><span class="t1">' + bankBadge(c.bank, 'sm') + esc(c.holder || 'Без имени') + ' ••' + esc(last4(c)) + '</span><span class="t2">' + (s.bal !== null ? 'баланс ' + money(s.bal, true) + ' · ' : '') + 'лимит осталось ' + money(s.left, true) + '</span></span><span class="pc">' + (s.lim ? Math.round(s.p * 100) + '%' : '—') + '</span></button>';
   }).join('') : '<div class="empty" style="padding:10px">Карт не найдено</div>';
   pressSet($('#oCards'), 'data-oc', OP.card);
 }
@@ -2300,7 +2316,7 @@ document.addEventListener('change', function(e){
 $('#fab').addEventListener('click', function(){
   if (!S.cards.length){ toast('Сначала добавь карту'); openCard(null); return; }
   openOp(null);
-  if (S.view === 'cards' && S.person){ $('#oSearch').value = S.person; renderOpCards(); }
+  // в меню человека карты этого человека уже выбраны фильтром
 });
 (function(){
   var b = $('#fsBtn');

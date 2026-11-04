@@ -1,5 +1,5 @@
 // Офлайн-кэш «Лимитов» + приём квитанций через «Поделиться» (Android).
-var CACHE = 'limity-v18';
+var CACHE = 'limity-v19';
 var SHELL = ['./', './index.html', './config.js', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
