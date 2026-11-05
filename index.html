@@ -1427,7 +1427,7 @@ function openOp(o, opts){
   } else OP = o ? {id:o.id, orig:o, dir:o.dir, card:o.card, to:null, lim:true, src:o.src || 'manual'} : {id:null, dir:'out', card:opts.card || null, to:null, lim:true, src:'manual'};
   $('#oTitle').textContent = o ? (OP.dir === 'xfer' ? 'Перевод между картами' : 'Запись') : 'Новая запись';
   $('#oAmt').value = o ? kopIn(Math.abs(o.amount)) : ''; $('#oDate').value = o ? o.date : today(); $('#oNote').value = o ? (o.note || '') : '';
-  $('#oSearch').value = ''; OPW = opts.who || (S.view === 'cards' && S.person) || 'all'; renderOpWho(); $('#oOcr').hidden = true; $('#oSkip').hidden = true; $('#oDrop').hidden = !!o; $('#oDupe').hidden = true; $('#oImg').hidden = false; $('#oOrdSkip').hidden = true; OP.okx = null; $('#oRawWrap').hidden = true; $('#oRawBtn').hidden = true; $('#oRawBtn').textContent = 'Показать прочитанный текст';
+  $('#oSearch').value = ''; OPW = opts.who || (S.view === 'cards' && S.person) || 'all'; renderOpWho(); $('#oOcr').hidden = true; $('#oSkip').hidden = true; $('#oDrop').hidden = !!o; $('#oDupe').hidden = true; $('#oImg').hidden = false; $('#oOrdSkip').hidden = true; OP.okx = null; OP.okxRc = null; $('#oRawWrap').hidden = true; $('#oRawBtn').hidden = true; $('#oRawBtn').textContent = 'Показать прочитанный текст';
   var d = $('#oDel'); d.hidden = !o; d.classList.remove('armed'); d.textContent = 'Удалить';
   renderOpCards(); syncOp(); if (!opts.keep) openSheet('sOp');
 }
@@ -1541,7 +1541,7 @@ $('#oSave').addEventListener('click', function(){
   var okxId = OP.okx;
   var ids = commitOp(sp); vib(12);
   if (!okxId && !sp.id && OP.src === 'receipt'){ var om2 = matchOrder(sp); if (om2) okxId = om2.id; }
-  if (okxId) store.patch('lorders', okxId, {done:true, need:false, opIds:ids, card:sp.card, doneAt:Date.now(), doneHow:'manual'}).catch(dbErr);
+  if (okxId){ var ordM = byId(S.orders, okxId); if (ordM){ var rr = linkToOrder(ordM, ids, sp.dir === 'xfer' ? null : sp, 'manual', OP.okxRc); if (!rr.full) toast('По ордеру ещё не хватает ' + money(Math.max(0, rr.left)), 3500); } }
   if (!sp.id) notifyRecord(sp);
   if (ids.length) showUndo('Записал: ' + doneMsg(sp), ids); else toast('Сохранено');
   if (OQ.length) nextReceipt(); else closeSheet();
@@ -1849,7 +1849,7 @@ function applyParsed(p){
   if (guessed){ found[0] = found[0] + ' — по банку и имени'; if (!matchOrder(sp)) sure = false; }
   if (hits.length && p.amount && sure && auto && !dupe){
     var ids = commitOp(sp); notifyRecord(sp); vib(15);
-    var om = matchOrder(sp); if (om){ store.patch('lorders', om.id, {done:true, need:false, opIds:ids, card:sp.card, doneAt:Date.now(), doneHow:'share'}).catch(dbErr); om.done = true; found.push('ордер OKX закрыт'); }
+    var om = matchOrder(sp); if (om){ var rs = linkToOrder(om, ids, sp, 'share'); found.push(rs.full ? 'ордер OKX закрыт' : 'по ордеру OKX не хватает ' + money(Math.max(0, rs.left))); }
     setOcr('ok', 'Записал: ' + found.join(', '), OQ.length ? 'Дальше следующая квитанция…' : 'Готово.', 0);
     showUndo('Записал: ' + doneMsg(sp), ids);
     setTimeout(function(){ if (OQ.length) nextReceipt(); else if (openSh && openSh.id === 'sOp') closeSheet(); }, 1100);
@@ -2007,16 +2007,38 @@ $('#kxOff').addEventListener('click', function(){
 });
 
 /* квитанция из «Поделиться» подходит к ордеру из «Требует внимания»? */
+/* ордер может быть оплачен несколькими квитанциями с разных карт */
+function ordTol(o){ return Math.max((o.fiat || 0) * 0.03, 10000); }
+function ordLeft(o){ return (o.fiat || 0) - (o.partSum || 0); }
+function ordPending(o){ var dn = (o.rcDone || []).concat(o.rcBad || []); return (o.receipts || []).filter(function(r){ return r && r.url && dn.indexOf(r.url) < 0; }); }
+function ordBad(o){ var dn = o.rcDone || []; return (o.rcBad || []).filter(function(u){ return dn.indexOf(u) < 0; }); }
+function shortWhy(o){ return 'Записано ' + money(o.partSum || 0) + ' из ' + money(o.fiat || 0) + '. Не хватает ' + money(Math.max(0, ordLeft(o))) + ' — поделись недостающей квитанцией'; }
+/* привязать запись к ордеру: суммы копятся, записи не теряются */
+function textSig(t){ t = String(t || '').replace(/\s+/g, ' ').trim(); var h = 5381; for (var i = 0; i < t.length; i++) h = ((h * 33) ^ t.charCodeAt(i)) >>> 0; return h.toString(36) + t.length; }
+function linkToOrder(o, ids, sp, how, url){
+  var rc = (o.rcDone || []).slice(); if (url) rc.push(url);
+  var patch = {rcSigs:o.rcSigs || [], partSum:(o.partSum || 0) + (sp ? sp.amount : 0), opIds:(o.opIds || []).concat(ids || []), rcDone:rc, card:sp ? sp.card : (o.card || null), doneAt:Date.now(), doneHow:how, done:true, need:false};
+  Object.assign(o, patch);
+  var left = ordLeft(o), full = left <= ordTol(o);
+  if (ordBad(o).length){ patch.done = false; patch.need = true; o.done = false; o.need = true; }   // есть квитанция, которую надо проверить вручную
+  else if (!full && how !== 'auto'){ patch.done = false; patch.need = true; patch.needWhy = shortWhy(o); o.done = false; o.need = true; o.needWhy = patch.needWhy; }
+  store.patch('lorders', o.id, patch).catch(dbErr);
+  return {full:full, left:left};
+}
+/* квитанция из «Поделиться» подходит к ордеру из «Требует внимания»? (целиком или как часть) */
 function matchOrder(sp){
   if (!sp || sp.dir === 'xfer') return null;
   var best = null;
   S.orders.forEach(function(o){
     if (!o.need || o.done || orderDir(o) !== sp.dir || !o.fiat) return;
-    var diff = Math.abs(o.fiat - sp.amount);
-    if (diff > Math.max(o.fiat * 0.03, 10000)) return;
+    var rem = ordLeft(o); if (rem <= 0) return;
+    var diff = Math.abs(rem - sp.amount), tol = ordTol(o);
+    var part = sp.amount < rem && /не хватает|не отдал|без квитанции/i.test(o.needWhy || '');
+    if (diff > tol && !part) return;
     var dd = Math.abs(toDate(orderDate(o)) - toDate(sp.date)) / 86400000;
     if (dd > 1) return;
-    if (!best || diff < best.d) best = {o:o, d:diff};
+    var score = diff <= tol ? diff : 1e12 + diff;
+    if (!best || score < best.d) best = {o:o, d:score};
   });
   return best ? best.o : null;
 }
@@ -2035,25 +2057,39 @@ function processOrders(){
       toast('Ордер отменён, запись убрана');
     }
   });
+  // ордер завершён, все квитанции записаны, но их сумма меньше ордера — показываем, сколько не хватает
+  S.orders.forEach(function(o){
+    if (o.status !== 'completed' || !o.done || !Array.isArray(o.rcDone) || !o.rcDone.length || o.shortNoted || ordPending(o).length) return;
+    if (ordLeft(o) <= ordTol(o)) return;
+    if (Date.now() - (o.completed || o.updatedAt || 0) < 180000) return;   // вдруг ещё одна квитанция в пути
+    o.shortNoted = true; o.done = false; o.need = true; o.needWhy = shortWhy(o);
+    store.patch('lorders', o.id, {shortNoted:true, done:false, need:true, needWhy:o.needWhy}).catch(dbErr);
+    if ((S.set || {}).tgFail !== false) tgSend('❓ ' + orderTitle(o) + '\n' + o.needWhy + '.');
+  });
   var todo = S.orders.filter(function(o){
     // ордер ждал квитанцию, а сервер её потом достал — обрабатываем снова
     var lateRc = o.need && /без квитанции|не отдал квитанцию/.test(o.needWhy || '') && o.receipts && o.receipts.length;
-    if (o.done || (o.need && !lateRc) || o.status === 'cancelled') return false;
+    if (o.status === 'cancelled' || o.skipped) return false;
+    if (o.done && !Array.isArray(o.rcDone)) return false;            // старые ордера (до разбивки на квитанции)
+    if (o.need && !Array.isArray(o.rcDone) && !Array.isArray(o.rcBad) && !lateRc) return false;
+    var pend = ordPending(o).length;
+    if (!pend && (o.done || o.need)) return false;
     if ((o.created || o.firstSeen || 0) < since) return false;
     if (o.fiatCurrency && String(o.fiatCurrency).toUpperCase() !== 'UAH') return false;
     if (o.claimBy && o.claimBy !== DEV && Date.now() - (o.claimAt || 0) < 120000) return false;
-    if (o.receipts && o.receipts.length) return true;
+    if (pend) return true;
     // сервер ещё ищет квитанцию в чате — ждём (но не дольше 5 минут)
     if (o.status === 'completed') return !o.rcWait || Date.now() - (o.updatedAt || o.firstSeen || 0) > 300000;
     return false;
   }).sort(function(a, b){ return (a.created || 0) - (b.created || 0); });
   if (!todo.length) return;
   procBusy = true;
-  var o = todo[0];
+  var o = todo[0], curRc = null;
   store.claim(o.id, DEV).then(function(ok){
     if (!ok) return;
     if (!o.receipts || !o.receipts.length) return markNeed(o, 'OKX не отдал квитанцию из чата — поделись ею из банка', o.noReceipt);
-    var rc = o.receipts[o.receipts.length - 1].url;
+    var pend = ordPending(o); if (!pend.length) return;
+    var rc = pend[0].url; curRc = rc;
     return fetch(okxFileUrl(rc)).then(function(r){ if (!r.ok) throw new Error('файл ' + r.status); return r.blob(); })
       .then(function(blob){
         if (/pdf/.test(blob.type)) return readPdf(new File([blob], 'r.pdf', {type:'application/pdf'})).then(function(x){ return x.text; });
@@ -2062,38 +2098,48 @@ function processOrders(){
       .then(function(text){
         var p = parseReceipt(text), hits = matchCards(p), want = orderDir(o);
         var h = hits.filter(function(x){ return x.dir === want; })[0] || hits.filter(function(x){ return !x.dir; })[0] || (hits.length === 1 ? hits[0] : null);
-        if (!h) return markNeed(o, p.cards.length ? 'Карта ••' + p.cards.map(function(c){ return c.last4; }).join(', ••') + ' не найдена в базе' : p.guessWhy ? cap(p.guessWhy) : 'На квитанции нет номера карты и не нашёл банк из твоей базы');
-        if (h.guess && !(p.amount && o.fiat && Math.abs(p.amount - o.fiat) <= Math.max(o.fiat * 0.03, 10000))) return markNeed(o, 'Похоже на ' + h.c.bank + ' ••' + last4(h.c) + ' (по банку и имени), но сумма на квитанции не совпала — проверь');
-        var close = p.amount && o.fiat && Math.abs(p.amount - o.fiat) <= Math.max(o.fiat * 0.03, 10000);
-        // квитанция найдена по времени в общем чате — пишем только если сумма совпала
-        if (o.rcGuess && !close) return markNeed(o, 'Нашёл квитанцию в чате, но сумма ' + (p.amount ? kopIn(p.amount) + ' ₴' : '?') + ' не совпала с ордером');
-        var amt = o.fiat; if (close) amt = p.amount;
-        var sp = {dir:want, card:h.c.id, amount:amt, date:orderDate(o), note:'OKX ' + (o.counterparty || '') + ' #' + String(o.orderId).slice(-6), src:'okx', lim:true};
-        if (!(sp.amount > 0)) return markNeed(o, 'В ордере нет суммы');
+        if (!h) return markNeed(o, p.cards.length ? 'Карта ••' + p.cards.map(function(c){ return c.last4; }).join(', ••') + ' не найдена в базе' : p.guessWhy ? cap(p.guessWhy) : 'На квитанции нет номера карты и не нашёл банк из твоей базы', false, curRc);
+        var rem = ordLeft(o), tol = ordTol(o), first = !(o.rcDone && o.rcDone.length);
+        // сумма этой квитанции: с самой квитанции; если не прочиталась и квитанция одна — сумма ордера
+        var amt = p.amount > 0 ? p.amount : 0;
+        if (!amt && first && (o.receipts || []).length === 1 && !h.guess && !o.rcGuess) amt = o.fiat;
+        if (!amt) return markNeed(o, 'Не прочитал сумму на квитанции ' + ((o.rcDone || []).length + 1) + ' — проверь', false, curRc);
+        // та же самая квитанция второй раз (текст совпал полностью) — пропускаем.
+        // Два одинаковых перевода с одной карты — это разные квитанции (другое время/номер), их пишем оба.
+        var sig = textSig(text);
+        if ((o.rcSigs || []).indexOf(sig) > -1){ linkToOrder(o, [], null, 'auto', rc); return; }
+        o.rcSigs = (o.rcSigs || []).concat([sig]);
+        if (amt > rem + tol) return markNeed(o, 'Сумма квитанции ' + money(amt) + ' больше, чем осталось по ордеру (' + money(Math.max(0, rem)) + ') — проверь', false, curRc);
+        var multi = (o.receipts || []).length > 1 || !first || amt < rem - tol;
+        var sp = {dir:want, card:h.c.id, amount:amt, date:orderDate(o), note:'OKX ' + (o.counterparty || '') + ' #' + String(o.orderId).slice(-6) + (multi ? ' · часть ' + ((o.rcDone || []).length + 1) : ''), src:'okx', lim:true};
         var ids = commitOp(sp);
-        store.patch('lorders', o.id, {done:true, need:false, opIds:ids, card:h.c.id, doneAt:Date.now(), doneHow:'auto'}).catch(dbErr);
+        var res = linkToOrder(o, ids, sp, 'auto', rc);
         notifyRecord(sp);
-        showUndo('OKX: ' + doneMsg(sp), ids);
+        showUndo('OKX: ' + doneMsg(sp) + (multi ? (res.full ? ' · ордер оплачен полностью' : ' · по ордеру осталось ' + money(Math.max(0, res.left))) : ''), ids);
       });
   }).catch(function(e){
     console.error(e);
-    return markNeed(o, 'Не получилось обработать квитанцию: ' + (e && e.message || 'ошибка'));
+    return markNeed(o, 'Не получилось обработать квитанцию: ' + (e && e.message || 'ошибка'), false, curRc);
   }).then(function(){ procBusy = false; setTimeout(processOrders, 400); });
 }
-function markNeed(o, why, quiet){
-  o.need = true;
+function markNeed(o, why, quiet, url){
+  o.need = true; o.needWhy = why;
+  var patch = {need:true, needWhy:why};
+  if (url){ o.rcBad = (o.rcBad || []).concat([url]); patch.rcBad = o.rcBad; patch.done = false; o.done = false; }   // эту квитанцию больше не трогаем — ждём тебя
   if (!quiet && (S.set || {}).tgFail !== false) tgSend('❓ ' + orderTitle(o) + '\n' + why + '. Открой «Лимиты» → «Требует внимания».');
-  return store.patch('lorders', o.id, {need:true, needWhy:why}).catch(dbErr);
+  return store.patch('lorders', o.id, patch).catch(dbErr);
 }
 function openOrder(o){
   openOp(null);
   OP.okx = o.id; OP.src = 'okx'; OP.dir = orderDir(o);
   $('#oTitle').textContent = orderTitle(o);
-  $('#oAmt').value = kopIn(o.fiat || 0); $('#oDate').value = orderDate(o);
+  $('#oAmt').value = kopIn(Math.max(0, ordLeft(o)) || o.fiat || 0); $('#oDate').value = orderDate(o);
   $('#oNote').value = 'OKX ' + (o.counterparty || '') + ' #' + String(o.orderId).slice(-6);
   $('#oDrop').hidden = true; $('#oOrdSkip').hidden = false; $('#oOrdSkip').classList.remove('armed'); $('#oOrdSkip').textContent = 'Не учитывать этот ордер';
   if (o.receipts && o.receipts.length && okxOn()){
-    $('#oOcr').hidden = false; $('#oImg').src = okxFileUrl(o.receipts[o.receipts.length - 1].url);
+    var bq = ordBad(o), pq = ordPending(o), shownRc = bq.length ? {url:bq[0]} : pq.length ? pq[0] : o.receipts[o.receipts.length - 1];
+    OP.okxRc = bq.length || pq.length ? shownRc.url : null;
+    $('#oOcr').hidden = false; $('#oImg').src = okxFileUrl(shownRc.url);
     setOcr('warn', o.needWhy || 'Выбери карту', 'Квитанция из чата ордера. Выбери карту и нажми «Сохранить».', 0);
   } else if (o.needWhy){ $('#oOcr').hidden = false; $('#oImg').hidden = true; setOcr('warn', o.needWhy, 'Выбери карту, на которую ' + (o.side === 'sell' ? 'пришли' : 'ушли с') + ' деньги, и нажми «Сохранить».', 0); }
   syncOp(); renderOpCards();
@@ -2383,7 +2429,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:' && window.top
 setInterval(function(){ if (shown && !openSh && document.visibilityState === 'visible' && S.view === 'cards' && !(document.activeElement && document.activeElement.id === 'q')) render(); }, 10 * 60 * 1000);
 
 window.__parseReceipt = parseReceipt; window.__match = matchCards;
-if (window.__PREVIEW__){ window.__proc = function(){ DEMO = false; procBusy = false; processOrders(); }; window.__S = S; window.__test = function(t){ OP.src = "receipt"; applyParsed(parseReceipt(t)); }; window.__bal = function(id){ return cardBal(byId(S.cards, id)) / 100; }; }
+if (window.__PREVIEW__){ window.__proc = function(){ DEMO = false; procBusy = false; processOrders(); }; window.__S = S; window.__test = function(t){ OP.src = "receipt"; applyParsed(parseReceipt(t)); }; window.__bal = function(id){ return cardBal(byId(S.cards, id)) / 100; }; window.__putOrder = function(o){ return store.put("lorders", o.id, o); }; }
 })();
 </script>
 </body>
