@@ -603,6 +603,8 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
     <div class="logo"><svg viewBox="0 0 32 32" fill="none"><rect x="4" y="8" width="24" height="16" rx="3.5" stroke="#fff" stroke-width="2"/><path d="M8 19.5h6" stroke="#35C793" stroke-width="2.4" stroke-linecap="round"/><path d="M14 19.5h5" stroke="#F2B33D" stroke-width="2.4" stroke-linecap="round"/><path d="M19 19.5h5" stroke="#FF6B62" stroke-width="2.4" stroke-linecap="round"/></svg></div>
     <p id="splashTxt">Загружаем…</p>
     <button class="btn ghost sm" id="splashRe" type="button" hidden style="margin-top:14px;width:220px" onclick="location.replace(location.pathname)">Перезапустить</button>
+    <button class="btn ghost sm" id="splashFix" type="button" hidden style="margin-top:10px;width:220px" onclick="limFix()">Очистить кэш и войти заново</button>
+    <p id="splashStage" style="font-size:12px;opacity:.5;margin-top:12px" hidden></p>
   </div>
 </div>
 
@@ -810,6 +812,15 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
 
 <script src="config.js"></script>
 <script>
+/* аварийная кнопка: чистим кэш, офлайн-базу и сервис-воркер этого приложения. Данные в облаке не трогаются. */
+window.limFix = function(){
+  var b = document.getElementById('splashFix'); if (b){ b.disabled = true; b.textContent = 'Чищу…'; }
+  var jobs = [];
+  try { if (window.caches) jobs.push(caches.keys().then(function(ks){ return Promise.all(ks.filter(function(k){ return /^limity-/.test(k); }).map(function(k){ return caches.delete(k); })); })); } catch(e){}
+  try { if (navigator.serviceWorker) jobs.push(navigator.serviceWorker.getRegistrations().then(function(rs){ return Promise.all(rs.filter(function(r){ return r.scope.indexOf(location.pathname) > -1; }).map(function(r){ return r.unregister(); })); })); } catch(e){}
+  try { if (indexedDB.databases) jobs.push(indexedDB.databases().then(function(ds){ return Promise.all(ds.filter(function(d){ return d.name && (/limity-48c30/.test(d.name) || d.name === 'firebaseLocalStorageDb' || /^firebase/.test(d.name)); }).map(function(d){ return new Promise(function(r){ var q = indexedDB.deleteDatabase(d.name); q.onsuccess = q.onerror = q.onblocked = function(){ r(); }; setTimeout(r, 3000); }); })); })); } catch(e){}
+  Promise.race([Promise.all(jobs), new Promise(function(r){ setTimeout(r, 6000); })]).then(function(){ location.replace(location.pathname + '?fresh=' + Date.now()); });
+};
 window.addEventListener('error', function(e){ try { var sp = document.getElementById('splash'); if (sp && !sp.hidden){ document.getElementById('splashTxt').textContent = 'Ошибка: ' + (e.message || 'неизвестная') + '. Скинь этот экран Claude.'; document.getElementById('splashRe').hidden = false; } } catch(x){} });
 (function(){
 'use strict';
@@ -1587,6 +1598,27 @@ function getPdf(){
   pdfP = (window.pdfjsLib ? Promise.resolve() : loadScript(PDFJS)).then(function(){ pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_W; return pdfjsLib; }).catch(function(e){ pdfP = null; throw e; });
   return pdfP;
 }
+/* Квитанции в две колонки («Платник | Отримувач» рядом, как у Альянса и ПУМБ):
+   читаем сначала левую колонку целиком, потом правую — иначе строки отправителя и получателя перемешиваются. */
+function pdfColumns(rows){
+  var join = function(items){ return items.map(function(i){ return i.s; }).join(' '); };
+  var SND = /^(платник|відправник|отправитель|плательщик)(?![а-яіїєґa-z])/i, RCV = /^(отримувач|одержувач|получатель)(?![а-яіїєґa-z])/i;
+  var h = -1, colX = 0;
+  for (var k = 0; k < rows.length && h < 0; k++){
+    var it = rows[k].items, a = -1, b = -1;
+    it.forEach(function(x, j){ if (a < 0 && SND.test(x.s.trim())) a = j; else if (a > -1 && b < 0 && RCV.test(x.s.trim())) b = j; });
+    if (a > -1 && b > -1 && it[b].x - it[a].x > 80){ h = k; colX = it[b].x - 4; }
+  }
+  if (h < 0) return rows.map(function(r){ return join(r.items); }).join('\n');
+  var out = [], right = [];
+  rows.forEach(function(r, k){
+    if (k < h){ out.push(join(r.items)); return; }
+    var L = r.items.filter(function(i){ return i.x < colX; }), Rr = r.items.filter(function(i){ return i.x >= colX; });
+    if (L.length) out.push(join(L));
+    if (Rr.length) right.push(join(Rr));
+  });
+  return out.concat(right).join('\n');
+}
 function readPdf(f){
   return Promise.all([getPdf(), f.arrayBuffer()]).then(function(r){
     return r[0].getDocument({data:new Uint8Array(r[1])}).promise;
@@ -1605,7 +1637,8 @@ function readPdf(f){
             row.items.push({x:x, s:it.str});
           });
           rows.sort(function(a, b){ return b.y - a.y; });
-          return rows.map(function(r){ return r.items.sort(function(a, b){ return a.x - b.x; }).map(function(i){ return i.s; }).join(' '); }).join('\n');
+          rows.forEach(function(r){ r.items.sort(function(a, b){ return a.x - b.x; }); });
+          return pdfColumns(rows);
         }).join('\n');
         // картинка первой страницы: для превью и на случай скана
         var vp = ps[0].getViewport({scale:2}), cv = document.createElement('canvas');
@@ -1657,7 +1690,13 @@ function setOcr(cls, st, txt, prog){ var s = $('#oSt'); s.className = 'st ' + cl
 
 function parseReceipt(raw){
   var t = String(raw || '').replace(/[|]/g, ' ').replace(/[ \t ]+/g, ' ');
-  var low = t.toLowerCase();
+  // OCR часто путает кириллицу с похожей латиницей («комiсiя», «Cума») — выравниваем внутри русских/украинских слов (длина текста не меняется)
+  var LAT = {a:'а', c:'с', e:'е', i:'і', o:'о', p:'р', x:'х', y:'у', k:'к', m:'м', t:'т', h:'н', b:'в'};
+  var low = t.toLowerCase().replace(/[a-z]+/g, function(w, i, all){
+    var prev = all.charAt(i - 1), next = all.charAt(i + w.length);
+    if (!/[а-яіїєґ]/.test(prev) && !/[а-яіїєґ]/.test(next)) return w;
+    return w.replace(/[aceiopxykmthb]/g, function(ch){ return LAT[ch]; });
+  });
   var res = {cards:[], amount:0, date:null, text:t};
 
   /* направление: в каком блоке стоит номер карты — «Відправник» или «Одержувач» */
@@ -1677,8 +1716,9 @@ function parseReceipt(raw){
     res.cards.push({first:first, last4:l4, pos:pos, dir:dirAt(pos)});
   }
   var m;
-  var re1 = /(\d{4})[ \-]?(\d{2})?[ \-]*[\*xх•·●∗#]{2,}[ \-]*[\*xх•·●∗#]{0,6}[ \-]*(\d{4})(?!\d)/gi;
-  while ((m = re1.exec(t))) addCand(m[1] + (m[2] || ''), m[3], m.index);
+  var MASK = '[\\*xх•·●∗#∙⋅◦∘⦁°‧]';
+  var re1 = new RegExp('(\\d{4})[ \\-]?(\\d{2,4})?[ \\-]*(?:' + MASK + '{2,}|…+|\\.{3,}|[eеoо]{4})[ \\-]*(?:' + MASK + '{0,6}[ \\-]*)(\\d{4})(?!\\d)', 'gi');
+  while ((m = re1.exec(t))) addCand(m[1] + (m[2] || '').slice(0, 2), m[3], m.index);
   var re3 = /(?:^|[^\dA-Za-z])(\d{4})[ \-]?(\d{4})[ \-]?(\d{4})[ \-]?(\d{4})(?!\d)/g;
   while ((m = re3.exec(t))) addCand(m[1] + m[2].slice(0, 2), m[4], m.index + (m[0].length - m[0].replace(/^[^\d]/, '').length));
   var re2 = /(?:[\*•●∗]{1,}|[xх·#]{2,}|\.{3,}) ?(\d{4})(?!\d)/gi;
@@ -1690,7 +1730,7 @@ function parseReceipt(raw){
   var cands = [];
   low.split('\n').forEach(function(line, li){
     var L = line.trim(); if (!L) return;
-    if (/коміс|комис|fee|літерами|прописью|кешбек|кешбэк|cashback|бонус|ліцензі|лицензи|телефон|код|№|рахунок кешбеку/.test(L) && !/^сума\s*\((грн|uah)\)/.test(L)) return;
+    if (/коміс|комис|fee|плата за|утримано|літерами|прописью|кешбек|кешбэк|cashback|бонус|ліцензі|лицензи|телефон|код|№|рахунок кешбеку/.test(L) && !/^сума\s*\((грн|uah)\)/.test(L)) return;
     var rx = new RegExp(NUM + '\\s*(₴|грн|uah|гривень|гривні)?', 'gi'), mm;
     while ((mm = rx.exec(L))){
       var v = val(mm[1], mm[2]); if (!(v > 0)) continue;
@@ -2070,6 +2110,8 @@ function processOrders(){
     // ордер ждал квитанцию, а сервер её потом достал — обрабатываем снова
     var lateRc = o.need && /без квитанции|не отдал квитанцию/.test(o.needWhy || '') && o.receipts && o.receipts.length;
     if (o.status === 'cancelled' || o.skipped) return false;
+    if (o.srv && !o.srvOff) return false;                             // квитанции этого ордера читает сервер
+
     if (o.done && !Array.isArray(o.rcDone)) return false;            // старые ордера (до разбивки на квитанции)
     if (o.need && !Array.isArray(o.rcDone) && !Array.isArray(o.rcBad) && !lateRc) return false;
     var pend = ordPending(o).length;
@@ -2388,16 +2430,21 @@ function startData(){ S.ready = {c:false, o:false}; unlisten = store.listen(onDa
 if (DEMO){ $('#demoBadge').hidden = false; store = DemoStore(); startData(); }
 else {
   var base = 'https://www.gstatic.com/firebasejs/' + FB_VER + '/';
+  window.__stage = 'загрузка Firebase';
   loadScript(base + 'firebase-app-compat.js')
-    .then(function(){ return Promise.all([loadScript(base + 'firebase-auth-compat.js'), loadScript(base + 'firebase-firestore-compat.js')]); })
+    .then(function(){ window.__stage = 'загрузка модулей'; return Promise.all([loadScript(base + 'firebase-auth-compat.js'), loadScript(base + 'firebase-firestore-compat.js')]); })
     .then(function(){
+      window.__stage = 'запуск базы';
       firebase.initializeApp(CFG.firebase);
       var db = firebase.firestore();
-      // офлайн-кэш базы не должен блокировать запуск: ждём максимум 2,5 секунды
-      var pers = Promise.race([db.enablePersistence({synchronizeTabs:true}).catch(function(){}), new Promise(function(r){ setTimeout(r, 2500); })]);
+      // офлайн-кэш базы не должен блокировать запуск: ждём максимум 2,5 секунды. После «Очистить кэш» — без него.
+      var fresh = /fresh=/.test(location.search);
+      if (fresh) try { history.replaceState(null, '', location.pathname); } catch(e){}
+      var pers = fresh ? Promise.resolve() : Promise.race([db.enablePersistence({synchronizeTabs:true}).catch(function(){}), new Promise(function(r){ setTimeout(r, 2500); })]);
       pers.then(function(){
+        window.__stage = 'проверка входа';
         firebase.auth().onAuthStateChanged(function(u){
-          authSeen = true;
+          authSeen = true; window.__stage = 'загрузка карт';
           if (unlisten){ unlisten(); unlisten = null; }
           shown = false;
           if (!u) return show('login');
@@ -2409,8 +2456,8 @@ else {
     })
     .catch(function(){ $('#splashTxt').textContent = 'Не получилось подключиться. Проверь интернет и открой приложение снова.'; $('#splashRe').hidden = false; });
   var authSeen = false;
-  setTimeout(function(){ if (!authSeen && !$('#splash').hidden){ $('#splashTxt').textContent = 'Долго нет ответа. Проверь интернет или перезапусти.'; $('#splashRe').hidden = false; } }, 12000);
-  setTimeout(function(){ if (authSeen && !shown && !$('#splash').hidden){ $('#splashTxt').textContent = 'Карты долго загружаются. Проверь интернет или перезапусти.'; $('#splashRe').hidden = false; } }, 20000);
+  setTimeout(function(){ if (!authSeen && !$('#splash').hidden){ $('#splashTxt').textContent = 'Долго нет ответа. Проверь интернет или перезапусти.'; $('#splashRe').hidden = false; $('#splashFix').hidden = false; var st = $('#splashStage'); st.hidden = false; st.textContent = 'Этап: ' + (window.__stage || '?'); } }, 12000);
+  setTimeout(function(){ if (authSeen && !shown && !$('#splash').hidden){ $('#splashTxt').textContent = 'Карты долго загружаются. Проверь интернет или перезапусти.'; $('#splashRe').hidden = false; $('#splashFix').hidden = false; var st = $('#splashStage'); st.hidden = false; st.textContent = 'Этап: ' + (window.__stage || '?'); } }, 20000);
   $('#loginForm').addEventListener('submit', function(e){
     e.preventDefault();
     var em = $('#lEmail').value.trim(), pw = $('#lPass').value, err = $('#lErr'), btn = $('#lBtn');
@@ -2428,7 +2475,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:' && window.top
 }
 setInterval(function(){ if (shown && !openSh && document.visibilityState === 'visible' && S.view === 'cards' && !(document.activeElement && document.activeElement.id === 'q')) render(); }, 10 * 60 * 1000);
 
-window.__parseReceipt = parseReceipt; window.__match = matchCards;
+window.__parseReceipt = parseReceipt; window.__match = matchCards; window.__readPdf = readPdf;
 if (window.__PREVIEW__){ window.__proc = function(){ DEMO = false; procBusy = false; processOrders(); }; window.__S = S; window.__test = function(t){ OP.src = "receipt"; applyParsed(parseReceipt(t)); }; window.__bal = function(id){ return cardBal(byId(S.cards, id)) / 100; }; window.__putOrder = function(o){ return store.put("lorders", o.id, o); }; }
 })();
 </script>
