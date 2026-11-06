@@ -594,6 +594,85 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+/* ================= «Профит» ================= */
+.pos{color:var(--ok)} .neg{color:var(--danger)}
+.hero .big.pos,.hero .big.neg{color:inherit}
+.hero .usd{font:500 14px var(--f-body);opacity:.7;margin-top:2px}
+.gbar{height:10px;border-radius:var(--r-sm);background:rgba(127,127,127,.28);overflow:hidden;position:relative}
+.gbar i{display:block;height:100%;border-radius:var(--r-sm);width:0;transition:width .9s var(--ease);background:var(--ok)}
+.gbar .mk{position:absolute;top:-2px;bottom:-2px;width:2px;background:currentColor;opacity:.55}
+.card .gbar{background:var(--surface-2)}
+.ghead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px}
+.ghead b{font:600 22px/1.1 var(--f-display);letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ghead span{font-size:13px;color:var(--muted);text-align:right}
+.gfoot{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.gfoot b{color:var(--ink);font-variant-numeric:tabular-nums}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.kpi{background:var(--surface);border-radius:var(--r-lg);padding:13px 14px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.kpi small{font-size:12px;color:var(--muted);font-weight:600}
+.kpi b{font:600 18px/1.15 var(--f-display);letter-spacing:-.015em;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi em{font-style:normal;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (min-width:700px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.warn{background:color-mix(in srgb,var(--warn) 14%,var(--surface));border-radius:var(--r-lg);padding:13px 15px;font-size:13.5px;line-height:1.45;display:flex;flex-direction:column;gap:8px}
+.warn b{color:var(--warn)}
+.warn button{align-self:flex-start;font-weight:700;color:var(--accent);font-size:13.5px}
+/* график */
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:auto;max-height:240px;overflow:visible}
+.chart .tipline{min-height:38px;display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:6px}
+.chart .tipline b{font:600 17px var(--f-display);font-variant-numeric:tabular-nums;white-space:nowrap}
+.chart .tipline span{font-size:12.5px;color:var(--muted);text-align:right}
+.chart .ax{font-size:10.5px;fill:var(--muted);font-family:var(--f-body)}
+.chart .hit{fill:transparent;cursor:pointer}
+.chart .bar-p{fill:var(--ok)} .chart .bar-n{fill:var(--danger)} .chart .bar-z{fill:var(--surface-2)}
+.chart .bar-a{fill:var(--accent)}
+.chart .sel{opacity:1} .chart.has-sel .bm:not(.sel){opacity:.45}
+.chart .base{stroke:var(--line);stroke-width:1}
+.chart .goal{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 4}
+/* строки сделок */
+.dl{display:flex;align-items:center;gap:12px;padding:10px 0;width:100%;text-align:left}
+.dl+.dl{border-top:1px solid var(--line)}
+.dl .mid{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.dl .t1{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dl .t2{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dl .rt{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:none}
+.dl .rt b{font-variant-numeric:tabular-nums;font-size:14.5px;white-space:nowrap}
+.dl .rt small{font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dl.off{opacity:.45}
+.dl .tag{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:6px;background:var(--surface-2);color:var(--muted);margin-left:6px;vertical-align:1px}
+.oic.buy{color:var(--info);background:color-mix(in srgb,var(--info) 14%,transparent)}
+.oic.sell{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.dayh2{display:flex;justify-content:space-between;gap:8px;font-size:13px;font-weight:700;color:var(--muted);padding:2px 2px 0}
+.dayh2 span:first-child:first-letter{text-transform:uppercase}
+/* рейтинги */
+.rk{display:flex;flex-direction:column;gap:4px;padding:9px 0}
+.rk+.rk{border-top:1px solid var(--line)}
+.rk .r1{display:flex;justify-content:space-between;gap:10px;font-size:14px}
+.rk .r1 span{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.rk .r1 b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.rk .r2{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted)}
+.rk .rb{height:4px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.rk .rb i{display:block;height:100%;border-radius:99px;background:var(--accent)}
+.rk .rb i.n{background:var(--danger)}
+.more{font-weight:700;color:var(--accent);font-size:13.5px;padding:8px 0 2px}
+.segsm{margin-bottom:10px}
+.segsm button{font-size:13px;padding-block:7px}
+/* шторка сделки */
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.calc{font-size:12.5px;color:var(--muted);margin:-4px 2px 0}
+.pprog{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.pprog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.okxid{font-size:12.5px;color:var(--muted);font-family:var(--f-mono)}
+@media (min-width:900px){ .p-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start} .p-two>*{min-width:0} }
+/* вкладка «Профит» в «Лимитах» */
+.nav .in{grid-template-columns:repeat(5,1fr)}
+@media (min-width:900px){ .nav .in{grid-template-columns:none} .nav .mob{display:none!important} }
+.ptoday{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;text-align:left;cursor:pointer}
+.ptoday .pt1{display:flex;flex-direction:column;gap:2px;flex:none}
+.ptoday .pt1 b{font:600 22px/1.1 var(--f-display);letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ptoday .pt2{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;align-items:stretch;text-align:right}
+.ptoday .pt2 small{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -644,8 +723,10 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
     <div class="in">
       <div class="brand desk"><span class="logo"><svg viewBox="0 0 32 32" fill="none"><rect x="4" y="8" width="24" height="16" rx="3.5" stroke="#fff" stroke-width="2"/><path d="M8 19.5h6" stroke="#35C793" stroke-width="2.4" stroke-linecap="round"/><path d="M14 19.5h5" stroke="#F2B33D" stroke-width="2.4" stroke-linecap="round"/><path d="M19 19.5h5" stroke="#FF6B62" stroke-width="2.4" stroke-linecap="round"/></svg></span>Лимиты карт</div>
       <button class="tab" data-tab="cards" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18M7 15h4"/></svg>Карты</button>
-      <button class="fab" id="fab" aria-label="Добавить перевод"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="desk">Добавить перевод</span></button>
+      <button class="tab" data-tab="profit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Профит</button>
+      <button class="fab" id="fab" aria-label="Добавить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="desk" id="fabTxt">Добавить перевод</span></button>
       <button class="tab" data-tab="hist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r=".6" fill="currentColor"/><circle cx="4" cy="12" r=".6" fill="currentColor"/><circle cx="4" cy="18" r=".6" fill="currentColor"/></svg>История</button>
+      <button class="tab mob" data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Ещё</button>
       <button class="tab desk setl" data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Настройки</button>
       <button class="tab desk fsl" id="fsBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span id="fsTxt">На весь экран</span></button>
     </div>
@@ -808,6 +889,55 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
 
 <div class="toast undo" id="undoT" role="status" aria-live="polite"><span id="undoTxt"></span><button type="button" id="undoBtn">Отменить</button></div>
 <div class="dropall" id="dropAll">Отпусти, чтобы прочитать квитанцию</div>
+<!-- Сделка -->
+<section class="sheet" id="sDeal" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+  <div class="grab"></div>
+  <div class="sh-h"><h3 id="dTitle">Новая сделка</h3><button class="x" data-close aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="okxid" id="dOkx" hidden></div>
+  <div class="seg" id="dSide" style="--n:2"><span class="ind"></span><button type="button" data-ds="b">Покупка USDT</button><button type="button" data-ds="s">Продажа USDT</button></div>
+  <div class="chips" id="dTags"><button type="button" class="chip" data-dg="Нал">Нал</button><button type="button" class="chip" data-dg="Вне биржи">Вне биржи</button><button type="button" class="chip" data-dg="Другая биржа">Другая биржа</button></div>
+  <div class="grid3">
+    <div class="col"><div class="fl">USDT</div><label class="field"><input id="dQ" type="text" inputmode="decimal" placeholder="250" autocomplete="off"></label></div>
+    <div class="col"><div class="fl">Курс</div><label class="field"><input id="dP" type="text" inputmode="decimal" placeholder="41,50" autocomplete="off"></label></div>
+    <div class="col"><div class="fl">Сумма ₴</div><label class="field"><input id="dU" type="text" inputmode="decimal" placeholder="10 375" autocomplete="off"></label></div>
+  </div>
+  <p class="calc" id="dCalc">Впиши любые два числа — третье посчитается само.</p>
+  <div class="grid2">
+    <div class="col"><div class="fl">Дата</div><label class="field"><input id="dDate" type="date"></label></div>
+    <div class="col"><div class="fl">Время</div><label class="field"><input id="dTime" type="time"></label></div>
+  </div>
+  <div class="col"><div class="fl">Контрагент</div><label class="field"><input id="dC" type="text" maxlength="60" placeholder="Имя или ник" autocomplete="off" list="dlCp"></label></div>
+  <datalist id="dlCp"></datalist>
+  <label class="field"><input id="dN" type="text" maxlength="120" placeholder="Заметка (необязательно)" autocomplete="off"></label>
+  <button class="togrow" id="dOffT" type="button" hidden><span>Учитывать в профите<span class="cnt">Выключи, если этот ордер не должен попадать в расчёт</span></span><span class="switch" id="dOffSw" role="switch" aria-checked="true"></span></button>
+  <button class="btn" id="dSave" type="button">Сохранить</button>
+  <button class="btn ghost sm" id="dReset" type="button" hidden>Вернуть как в OKX</button>
+  <button class="btn danger" id="dDel" type="button" hidden>Удалить сделку</button>
+</section>
+
+<!-- Цели -->
+<section class="sheet" id="sGoal" role="dialog" aria-modal="true" aria-labelledby="gTitle">
+  <div class="grab"></div>
+  <div class="sh-h"><h3 id="gTitle">Цели</h3><button class="x" data-close aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="col"><div class="fl">Профит за день</div><label class="field"><input id="gDay" type="text" inputmode="decimal" placeholder="1 000" autocomplete="off"><span class="suf">₴</span></label></div>
+  <div class="col"><div class="fl">Профит за месяц</div><label class="field"><input id="gMonth" type="text" inputmode="decimal" placeholder="30 000" autocomplete="off"><span class="suf">₴</span></label></div>
+  <p class="note" style="margin:0">Оставь поле пустым, если цель не нужна. Если задана только цель на месяц, дневная посчитается из неё: сколько осталось, делённое на оставшиеся дни.</p>
+  <button class="btn" id="gSave" type="button">Сохранить</button>
+</section>
+
+<!-- Стартовый остаток -->
+<section class="sheet" id="sStart" role="dialog" aria-modal="true" aria-labelledby="stTitle">
+  <div class="grab"></div>
+  <div class="sh-h"><h3 id="stTitle">Остаток на начало истории</h3><button class="x" data-close aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <p class="note" style="margin:0" id="stNote">Сколько USDT у тебя было до первой сделки в истории и по какой средней цене ты их купил. Без этого первые продажи считаются без остатка.</p>
+  <div class="grid2">
+    <div class="col"><div class="fl">USDT</div><label class="field"><input id="stQ" type="text" inputmode="decimal" placeholder="0" autocomplete="off"></label></div>
+    <div class="col"><div class="fl">Средняя цена</div><label class="field"><input id="stP" type="text" inputmode="decimal" placeholder="41,20" autocomplete="off"><span class="suf">₴</span></label></div>
+  </div>
+  <button class="btn" id="stSave" type="button">Сохранить</button>
+</section>
+
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="config.js"></script>
@@ -1083,7 +1213,8 @@ function DemoStore(){
   var subs = [];
   if (!data.set) data.set = {auto:true};
   if (!data.orders) data.orders = []; if (!data.bot) data.bot = {};
-  function emit(){ subs.forEach(function(f){ f('cards', data.cards.slice()); f('ops', data.ops.slice()); f('set', Object.assign({}, data.set)); f('orders', data.orders.slice()); f('bot', Object.assign({}, data.bot)); }); }
+  if (!data.pmonths){ var pd = PROF.demo(); data.pmonths = pd.months; data.pset = pd.set; }
+  function emit(){ subs.forEach(function(f){ f('cards', data.cards.slice()); f('ops', data.ops.slice()); f('set', Object.assign({}, data.set)); f('orders', data.orders.slice()); f('bot', Object.assign({}, data.bot)); f('pdeals', JSON.parse(JSON.stringify(data.pmonths))); f('pset', Object.assign({}, data.pset)); }); }
   function save(){ try { localStorage.setItem(KEY, JSON.stringify(data)); } catch(e){} setTimeout(emit, 0); return Promise.resolve(); }
   function col(c){ return c === 'lcards' ? data.cards : c === 'lorders' ? data.orders : data.ops; }
   function idx(a, id){ for (var i = 0; i < a.length; i++) if (a[i].id === id) return i; return -1; }
@@ -1093,6 +1224,10 @@ function DemoStore(){
     patch: function(c, id, p){ var a = col(c), i = idx(a, id); if (i > -1) Object.assign(a[i], p); return save(); },
     del: function(c, id){ var a = col(c), i = idx(a, id); if (i > -1) a.splice(i, 1); return save(); },
     setSettings: function(p){ Object.assign(data.set, p); return save(); },
+    putDeal: function(m, id, d){ (data.pmonths[m] = data.pmonths[m] || {})[id] = d; return save(); },
+    putMany: function(m, map){ data.pmonths[m] = Object.assign(data.pmonths[m] || {}, map); return save(); },
+    delDeal: function(m, id){ if (data.pmonths[m]) delete data.pmonths[m][id]; return save(); },
+    setPSettings: function(p){ Object.assign(data.pset, p); return save(); },
     claim: function(){ return Promise.resolve(true); },
     reset: function(){ data = makeDemo(); return save(); }
   };
@@ -1107,6 +1242,8 @@ function FirebaseStore(db){
       un.push(db.collection('lops').where('date', '>=', from).onSnapshot(function(s){ cb('ops', s.docs.map(function(d){ var o = d.data(); o.id = d.id; return o; })); }, dbErr));
       un.push(db.collection('lsettings').doc('main').onSnapshot(function(d){ cb('set', d.exists ? d.data() : {}); }, dbErr));
       un.push(db.collection('lorders').where('firstSeen', '>=', Date.now() - 7 * 86400000).onSnapshot(function(s){ cb('orders', s.docs.map(function(d){ var o = d.data(); o.id = d.id; return o; })); }, function(e){ console.error(e); }));
+      un.push(db.collection('pdeals').onSnapshot(function(s){ var mo = {}; s.docs.forEach(function(d){ mo[d.id] = (d.data() || {}).d || {}; }); cb('pdeals', mo); }, function(e){ console.error(e); }));
+      un.push(db.collection('psettings').doc('main').onSnapshot(function(d){ cb('pset', d.exists ? d.data() : {}); }, function(e){ console.error(e); }));
       un.push(db.collection('lbot').doc('state').onSnapshot(function(d){ var o = d.exists ? d.data() : {}; delete o.orders; cb('bot', o); }, function(e){ console.error(e); }));
       return function(){ un.forEach(function(f){ f(); }); };
     },
@@ -1114,6 +1251,11 @@ function FirebaseStore(db){
     patch: function(c, id, p){ return db.collection(c).doc(id).update(clean(p)); },
     del: function(c, id){ return db.collection(c).doc(id).delete(); },
     setSettings: function(p){ return db.collection('lsettings').doc('main').set(p, {merge:true}); },
+    /* профит: сделки лежат по месяцам pdeals/2026-11 → {d: {id: сделка}} */
+    putDeal: function(m, id, d){ var o = {}; o[id] = d; return db.collection('pdeals').doc(m).set({d:o}, {mergeFields:[new firebase.firestore.FieldPath('d', id)]}); },
+    putMany: function(m, map){ return db.collection('pdeals').doc(m).set({d:map}, {merge:true}); },
+    delDeal: function(m, id){ return db.collection('pdeals').doc(m).update(new firebase.firestore.FieldPath('d', id), firebase.firestore.FieldValue.delete()); },
+    setPSettings: function(p){ return db.collection('psettings').doc('main').set(p, {merge:true}); },
     /* «застолбить» ордер, чтобы его не обработали два устройства сразу */
     claim: function(id, dev){ var ref = db.collection('lorders').doc(id); return db.runTransaction(function(tx){ return tx.get(ref).then(function(d){ var o = d.exists ? d.data() : null; if (!o || o.done) return false; if (o.claimBy && o.claimBy !== dev && Date.now() - (o.claimAt || 0) < 120000) return false; tx.update(ref, {claimBy:dev, claimAt:Date.now()}); return true; }); }).catch(function(e){ console.error(e); return false; }); }
   };
@@ -1166,6 +1308,7 @@ function vPeople(){
   if (!S.cards.length) return h + '<section class="card"><div class="empty">Добавь первую карту: владелец, банк, номер и месячный лимит на отправку.</div><button class="btn ghost sm" data-act="newcard">Добавить карту</button></section>';
   if (S.q.trim()){ S.holder = 'all'; return h + '<div class="sec"><span>Найденные карты</span></div>' + cardsBlock(visibleCards()); }
   h += attentionHtml();
+  h += PROF.todayCard();
   var ps = personStats();
   h += '<div class="sec"><span>Люди</span><span>' + ps.length + '</span></div><div class="people">' + ps.map(function(p){
     var col = p.active ? heat(p.p) : 'var(--muted)';
@@ -1282,6 +1425,7 @@ function vSettings(){
     '<div class="fl" style="margin:16px 0 10px">Форма</div><div class="shapes">' + SHAPES.map(function(s){ return '<button class="shp" data-sh="' + s[0] + '" aria-pressed="' + ((PR.shape || 'std') === s[0]) + '"><span class="pv"><b></b><i></i></span>' + s[1] + '</button>'; }).join('') + '</div>' +
     '<p class="note">Тема и форма выбираются отдельно. Например, «Джарвис» с «Угловатым» или «Брутал Ч/Б» с «Брутализмом».</p></section>';
   h += colorsHtml();
+  h += PROF.settingsCard();
   h += '<section class="card"><h2>Как считаются советы</h2>' +
     '<div class="kv"><span>' + advChip({t:'Поднажми', c:'var(--ok)'}) + '</span><b style="font-weight:500;color:var(--muted);text-align:right">отстаёшь от темпа месяца больше чем на 15%</b></div>' +
     '<div class="kv"><span>' + advChip({t:'В темпе', c:'var(--info)'}) + '</span><b style="font-weight:500;color:var(--muted);text-align:right">идёшь ровно</b></div>' +
@@ -1331,17 +1475,18 @@ function colorsHtml(){
 }
 
 /* ============ рендер ============ */
-var TITLES = {cards:'Карты', hist:'История', settings:'Настройки'};
+var TITLES = {cards:'Карты', hist:'История', settings:'Настройки', profit:'Профит'};
 function render(enter){
   if (!S.ready.c || !S.ready.o) return;
   var v = $('#view'), focusQ = document.activeElement && document.activeElement.id === 'q', pos = focusQ ? document.activeElement.selectionStart : 0;
   v.className = 'view v-' + S.view + (enter && !REDUCED ? ' enter' : '');
-  v.innerHTML = S.view === 'hist' ? vHist() : S.view === 'settings' ? vSettings() : vCards();
+  v.innerHTML = S.view === 'hist' ? vHist() : S.view === 'settings' ? vSettings() : S.view === 'profit' ? PROF.view() : vCards();
   Array.prototype.forEach.call(v.children, function(c, i){ c.style.setProperty('--i', Math.min(i, 6)); });
   animateBars(v);
   if (focusQ){ var q = $('#q'); if (q){ q.focus(); try { q.setSelectionRange(pos, pos); } catch(e){} } }
   $('#topTitle').textContent = S.view === 'cards' && S.person ? S.person : TITLES[S.view];
   $('#topSub').textContent = S.view === 'cards' && S.person ? (function(){ var n = S.cards.filter(function(c){ return holderOf(c) === S.person; }).length; return n + ' ' + plural(n, 'карта', 'карты', 'карт'); })() : S.view === 'cards' ? cap(new Date().toLocaleDateString('ru-RU', {weekday:'long', day:'numeric', month:'long'})) : '';
+  var ft = $('#fabTxt'); if (ft) ft.textContent = S.view === 'profit' ? 'Добавить сделку' : 'Добавить перевод';
   document.querySelectorAll('[data-tab]').forEach(function(b){ if (b.getAttribute('data-tab') === S.view) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
 }
 var personPushed = false;
@@ -2346,6 +2491,7 @@ $('#feDel').addEventListener('click', function(){
 /* ============ клики ============ */
 var SORTS = ['pct','left','bal','adv','out'];
 document.addEventListener('click', function(e){
+  if ((S.view === 'profit' || S.view === 'settings' || e.target.closest('.ptoday')) && PROF.click(e)) return;
   var cp = e.target.closest('[data-copy]');
   if (cp && !cp.closest('.sheet')){ e.stopPropagation(); return doCopy(cp); }
   var eb = e.target.closest('[data-bal]');
@@ -2404,6 +2550,7 @@ document.addEventListener('change', function(e){
   }
 });
 $('#fab').addEventListener('click', function(){
+  if (S.view === 'profit') return PROF.openDeal(null);
   if (!S.cards.length){ toast('Сначала добавь карту'); openCard(null); return; }
   openOp(null);
   // в меню человека карты этого человека уже выбраны фильтром
@@ -2415,12 +2562,602 @@ $('#fab').addEventListener('click', function(){
   document.addEventListener('fullscreenchange', function(){ $('#fsTxt').textContent = document.fullscreenElement ? 'Выйти из полного экрана' : 'На весь экран'; });
 })();
 
+
+/* ================= ПРОФИТ (вкладка) ================= */
+var PROF = (function(){
+var HIST_DAYS = 182;
+/* ============ «Профит»: расчёт по средней цене (формула Артёма) ============
+   1. Средняя покупка = (остаток × старая средняя + гривны на покупки) / (остаток + купленные USDT)
+   2. Средняя продажа = гривны с продаж / проданные USDT
+   3. Профит дня = (средняя продажа − средняя покупка) × проданные USDT
+   4. Непроданное — остаток по средней покупки, переходит на следующий день.
+   День — с 00:00 до 24:00 по Киеву. Месяц = сумма дней.
+   Деньги — в копейках, USDT — числом. */
+var KYIV_F = new Intl.DateTimeFormat('en-CA', {timeZone:'Europe/Kiev', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', hourCycle:'h23'});
+var KYIV_C = {};
+function kyiv(ts){
+  var k = Math.floor(ts / 60000); if (KYIV_C[k]) return KYIV_C[k];
+  var p = {}; KYIV_F.formatToParts(new Date(ts)).forEach(function(x){ p[x.type] = x.value; });
+  var r = {day:p.year + '-' + p.month + '-' + p.day, hour:+p.hour % 24};
+  KYIV_C[k] = r; return r;
+}
+function computeProfit(deals, start){
+  var act = [];
+  deals.forEach(function(d){ if (!d || d.off || !(d.q > 0) || !(d.u > 0) || !d.t) return; var k = kyiv(d.t); act.push({id:d.id, s:d.s, q:d.q, u:d.u, t:d.t, c:d.c || '', src:d.src, day:k.day, hour:k.hour}); });
+  act.sort(function(a, b){ return a.t - b.t; });
+  var days = [], byDay = {}, cur = null;
+  act.forEach(function(d){
+    if (!cur || cur.day !== d.day){ cur = {day:d.day, buys:[], sells:[]}; days.push(cur); byDay[d.day] = cur; }
+    (d.s === 'b' ? cur.buys : cur.sells).push(d);
+  });
+  var q = start && start.q > 0 ? start.q : 0, avg = start && start.q > 0 ? start.avg : 0, lastCost = q > 0 ? avg : null;
+  var sale = {};                                  // id продажи → её доля профита
+  days.forEach(function(g){
+    var bU = 0, bQ = 0, sU = 0, sQ = 0;
+    g.buys.forEach(function(d){ bU += d.u; bQ += d.q; });
+    g.sells.forEach(function(d){ sU += d.u; sQ += d.q; });
+    g.carryQ = q; g.carryAvg = q > 0 ? avg : null;
+    var den = q + bQ;
+    var cost = den > 1e-9 ? (q * avg + bU) / den : lastCost;   // средняя покупки с учётом остатка
+    var aSell = sQ > 0 ? sU / sQ : null;
+    g.bU = bU; g.bQ = bQ; g.sU = sU; g.sQ = sQ;
+    g.avgBuyDay = bQ > 0 ? bU / bQ : null;       // только сегодняшние покупки
+    g.cost = cost; g.avgSell = aSell;
+    g.noCost = sQ > 0 && cost === null;
+    g.profit = sQ > 0 && cost !== null ? (aSell - cost) * sQ : 0;
+    g.spread = sQ > 0 && cost !== null ? aSell - cost : null;
+    g.spreadPct = g.spread !== null && cost ? g.spread / cost : null;
+    g.n = g.buys.length + g.sells.length;
+    g.sells.forEach(function(d){ sale[d.id] = cost !== null ? d.u - cost * d.q : 0; });
+    var nq = q + bQ - sQ; g.over = nq < -1e-6 ? -nq : 0; if (nq < 0) nq = 0;
+    q = nq; if (cost !== null){ avg = cost; lastCost = cost; }
+    g.restQ = q; g.restAvg = q > 0 ? avg : null;
+  });
+  return {days:days, byDay:byDay, sale:sale, rest:{q:q, avg:q > 0 ? avg : null}, deals:act};
+}
+function sumDays(list){
+  var r = {profit:0, bU:0, bQ:0, sU:0, sQ:0, n:0, days:list.length, plus:0, minus:0, best:null, worst:null, over:0, noCost:0};
+  list.forEach(function(g){
+    r.profit += g.profit; r.bU += g.bU; r.bQ += g.bQ; r.sU += g.sU; r.sQ += g.sQ; r.n += g.n;
+    if (g.sQ > 0){ if (g.profit >= 0) r.plus++; else r.minus++; }
+    if (g.sQ > 0 && (!r.best || g.profit > r.best.profit)) r.best = g;
+    if (g.sQ > 0 && (!r.worst || g.profit < r.worst.profit)) r.worst = g;
+    if (g.over) r.over++; if (g.noCost) r.noCost++;
+  });
+  r.avgBuy = r.bQ > 0 ? r.bU / r.bQ : null;
+  r.avgSell = r.sQ > 0 ? r.sU / r.sQ : null;
+  r.spread = r.sQ > 0 ? r.profit / r.sQ : null;               // заработок на 1 проданный USDT
+  r.spreadPct = r.spread !== null && r.avgSell ? r.spread / (r.avgSell - r.spread) : null;
+  return r;
+}
+/* ============ форматирование ============ */
+var NF2 = new Intl.NumberFormat('uk-UA', {minimumFractionDigits:2, maximumFractionDigits:2});
+var NFQ = new Intl.NumberFormat('uk-UA', {maximumFractionDigits:2});
+function usdt(q){ return sp(NFQ.format(Math.round(q * 100) / 100)) + ' USDT'; }
+function usdtS(q){ var a = Math.abs(q); return (q < 0 ? '−' : '') + (a >= 10000 ? sp(NFQ.format(Math.round(a / 100) / 10)) + 'к' : sp(NFQ.format(Math.round(a)))) + ' USDT'; }
+function price(k){ return k === null || k === undefined || !isFinite(k) ? '—' : sp(NF2.format(k / 100)); }
+function signed(k, short){ var r = Math.round(k); return (r > 0 ? '+' : r < 0 ? '−' : '') + (short ? moneyS(Math.abs(r)) : money(Math.abs(r), Math.abs(r) >= 100000)); }
+function pnlCls(k){ return Math.round(k) > 0 ? 'pos' : Math.round(k) < 0 ? 'neg' : ''; }
+function pct(x, d){ return x === null || !isFinite(x) ? '—' : sp(new Intl.NumberFormat('uk-UA', {maximumFractionDigits:d === undefined ? 2 : d}).format(x * 100)) + '%'; }
+function num(s){ s = String(s == null ? '' : s).replace(/[\s  ₴]/g, '').replace(',', '.'); if (!/^\d*\.?\d+$/.test(s)) return NaN; return parseFloat(s); }
+function inNum(x, d){ if (!x && x !== 0) return ''; return String(Math.round(x * Math.pow(10, d)) / Math.pow(10, d)).replace('.', ','); }
+function timeStr(ts){ var d = new Date(ts); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
+function kyivToday(){ return kyiv(Date.now()).day; }
+function kyivMonth(){ return kyivToday().slice(0, 7); }
+var IC_L = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>';
+var IC_R = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>';
+var IC_BUY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>';
+var IC_SELL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
+
+/* ============ состояние ============ */
+
+var CALC = null, CALC_KEY = '';
+function allDeals(){
+  var out = [];
+  Object.keys(PS.months).forEach(function(m){ var d = PS.months[m] || {}; Object.keys(d).forEach(function(id){ var x = d[id]; if (x && typeof x === 'object'){ var o = Object.assign({}, x); o.id = id; o.m = m; out.push(o); } }); });
+  return out;
+}
+function findDeal(id){ for (var m in PS.months){ var d = PS.months[m] || {}; if (d[id]){ var o = Object.assign({}, d[id]); o.id = id; o.m = m; return o; } } return null; }
+function startBal(){ var s = PS.set.start; return s && s.q > 0 && s.avg > 0 ? {q:s.q, avg:s.avg} : null; }
+function calc(){
+  var key = JSON.stringify([Object.keys(PS.months).map(function(m){ return m + ':' + Object.keys(PS.months[m] || {}).length; }), PS.ver || 0, PS.set.start || null]);
+  if (CALC && key === CALC_KEY) return CALC;
+  CALC = computeProfit(allDeals(), startBal()); CALC_KEY = key; return CALC;
+}
+function bump(){ PS.ver = (PS.ver || 0) + 1; }
+function daysOfMonth(m){ var c = calc(); return c.days.filter(function(g){ return g.day.slice(0, 7) === m; }); }
+function goals(){ var g = PS.set.goals || {}; return {day:g.day || 0, month:g.month || 0}; }
+function monthFracK(m){ if (m !== kyivMonth()) return 1; var t = kyivToday(); return (+t.slice(8, 10) - 1 + new Date().getHours() / 24) / daysIn(m); }
+function dayGoal(){
+  var g = goals(); if (g.day) return g.day;
+  if (!g.month) return 0;
+  var m = kyivMonth(), done = sumDays(daysOfMonth(m).filter(function(x){ return x.day < kyivToday(); })).profit;
+  var left = daysIn(m) - +kyivToday().slice(8, 10) + 1;
+  return Math.max(0, (g.month - done) / left);
+}
+
+
+/* ============ OKX: история и новые ордера ============ */
+function okxCfg(){ var t = S.set || {}, u = PS.set.okxUrl || t.okxUrl, k = PS.set.okxKey || t.okxKey; return u && k ? {url:String(u).replace(/\/+$/, ''), key:k} : null; }
+function histPage(cfg, start, end, page){
+  return fetch(cfg.url + '/history?start=' + start + '&end=' + end + '&page=' + page, {headers:{'x-app-key':cfg.key}})
+    .then(function(r){ return r.json().then(function(j){ if (!r.ok || j.ok === false) throw new Error(j.error || ('ошибка ' + r.status)); return j; }); });
+}
+function fetchRange(cfg, from, to, onStep){
+  var WEEK = 7 * 86400000, wins = [];
+  for (var a = from; a < to; a += WEEK) wins.push([a, Math.min(to, a + WEEK)]);
+  var got = [], wi = 0;
+  function nextWin(){
+    if (wi >= wins.length) return Promise.resolve(got);
+    var w = wins[wi], page = 1;
+    function nextPage(){
+      return histPage(cfg, w[0], w[1], page).then(function(j){
+        got = got.concat(j.orders || []);
+        if (j.more && page < 60){ page++; return nextPage(); }
+        wi++; if (onStep) onStep(wi / wins.length, got.length); return nextWin();
+      });
+    }
+    return nextPage();
+  }
+  return nextWin();
+}
+var SKIPPED = 0;
+function upsertOrders(orders){
+  var have = {}; allDeals().forEach(function(d){ have[d.id] = 1; });
+  var byM = {}, added = 0; SKIPPED = 0;
+  orders.forEach(function(o){
+    if (o.status !== 'completed') return;
+    if ((o.cc && o.cc !== 'USDT') || (o.fc && o.fc !== 'UAH')){ SKIPPED++; return; }
+    var id = 'okx' + o.id; if (have[id]) return; have[id] = 1;
+    var q = parseFloat(String(o.crypto).replace(',', '.')); if (!(q > 0) || !(o.fiat > 0)) return;
+    var t = o.completed || o.created || Date.now(), m = kyiv(t).day.slice(0, 7);
+    var d = {s:o.side === 'sell' ? 's' : 'b', q:q, u:o.fiat, t:t, c:o.cp || '', src:'okx'};
+    var p = parseFloat(o.price); if (p > 0) d.p = Math.round(p * 100);
+    (byM[m] = byM[m] || {})[id] = d; added++;
+  });
+  var ps = Object.keys(byM).map(function(m){ return store.putMany(m, byM[m]); });
+  return Promise.all(ps).then(function(){ return added; });
+}
+var SYNC = {busy:false, prog:0, msg:'', err:''};
+function importHistory(force){
+  var cfg = okxCfg(); if (!cfg || SYNC.busy) return;
+  SYNC.busy = true; SYNC.prog = 0; SYNC.err = ''; SYNC.msg = 'Загружаю историю OKX…'; rr();
+  var now = Date.now(), from = now - HIST_DAYS * 86400000;
+  fetchRange(cfg, from, now, function(p, n){ SYNC.prog = p; SYNC.msg = 'Загружаю историю OKX: найдено ордеров ' + n; var el = $('#syncProg'); if (el){ el.style.width = Math.round(p * 100) + '%'; $('#syncMsg').textContent = SYNC.msg; } })
+    .then(upsertOrders)
+    .then(function(added){ SYNC.busy = false; SYNC.msg = ''; store.setPSettings({histDone:true, syncTo:now, histAt:now}).catch(dbErr); toast(added ? 'История загружена: ' + added + ' ' + plural(added, 'сделка', 'сделки', 'сделок') : 'Новых сделок нет', 3500); rr(); })
+    .catch(function(e){ SYNC.busy = false; SYNC.err = e.message || 'ошибка'; SYNC.msg = ''; rr(); });
+}
+function liveSync(manual){
+  var cfg = okxCfg(); if (!cfg || SYNC.busy || !(S.ready.c && S.ready.o) || DEMO || !PS.got) return;
+  if (!PS.set.histDone) return importHistory();
+  var now = Date.now(), from = Math.max(now - 3 * 86400000, (PS.set.syncTo || now) - 3 * 3600000);
+  SYNC.busy = true; if (manual) SYNC.msg = 'Проверяю новые ордера…';
+  fetchRange(cfg, from, now).then(upsertOrders).then(function(added){
+    SYNC.busy = false; SYNC.msg = ''; SYNC.err = ''; PS.lastSync = Date.now();
+    store.setPSettings({syncTo:now}).catch(function(){});
+    if (manual) toast(added ? 'Новых сделок: ' + added : 'Новых ордеров нет');
+    if (S.view === 'settings') rr();
+  }).catch(function(e){ SYNC.busy = false; SYNC.msg = ''; SYNC.err = e.message || 'ошибка'; if (manual) toast('Не получилось: ' + SYNC.err, 4000); });
+}
+
+
+/* ============ разметка ============ */
+function emptyDay(day){ return {day:day, profit:0, bU:0, bQ:0, sU:0, sQ:0, n:0, cost:null, avgSell:null, spread:null, spreadPct:null, restQ:null, buys:[], sells:[], avgBuyDay:null}; }
+function lastRest(){ var c = calc(); return c.rest; }
+function goalBar(val, goal, key, mark){
+  var p = goal ? Math.max(0, Math.min(1, val / goal)) : 0;
+  return '<div class="gbar"><i data-w="' + (p * 100).toFixed(1) + '" data-k="' + key + '" style="background:' + (val >= goal && goal ? 'var(--ok)' : 'var(--accent)') + '"></i>' + (mark !== undefined ? '<span class="mk" style="left:' + (mark * 100).toFixed(1) + '%"></span>' : '') + '</div>';
+}
+function syncCard(){
+  var cfg = okxCfg();
+  if (SYNC.busy && SYNC.msg) return '<section class="card"><h2>История OKX</h2><p class="note" style="margin:0 0 10px" id="syncMsg">' + esc(SYNC.msg) + '</p><div class="pprog"><i id="syncProg" style="width:' + Math.round(SYNC.prog * 100) + '%"></i></div></section>';
+  if (SYNC.err) return '<div class="warn"><span><b>OKX:</b> ' + esc(SYNC.err) + '</span><button data-pact="' + (PS.set.histDone ? 'syncnow' : 'import') + '">Повторить</button></div>';
+  if (!cfg && !DEMO) return '<div class="warn"><span><b>Сервер OKX не найден.</b> Подключи OKX в «Лимитах» (Настройки → Автоматика) или впиши адрес здесь.</span><button data-pact="okx">Указать сервер</button></div>';
+  if (cfg && !PS.set.histDone) return '<section class="card"><h2>История OKX</h2><p class="note" style="margin:0 0 10px">Загружу твои ордера за 6 месяцев, чтобы посчитать среднюю цену остатка и профит по дням.</p><button class="btn sm" data-pact="import">Загрузить историю</button></section>';
+  return '';
+}
+function warnHtml(list){
+  var over = list.filter(function(g){ return g.over > 0 || g.noCost; });
+  if (!over.length || startBal()) return '';
+  return '<div class="warn"><span><b>Продано больше, чем куплено</b> в ' + over.length + ' ' + plural(over.length, 'дне', 'днях', 'днях') + '. Похоже, до начала истории у тебя уже был остаток USDT. Укажи его, и профит этих дней станет точнее.</span><button data-pact="start">Указать остаток</button></div>';
+}
+function vHome(){
+  var td = kyivToday(), m = kyivMonth(), c = calc();
+  var g = c.byDay[td] || emptyDay(td), G = goals(), dg = dayGoal();
+  var mDays = daysOfMonth(m), ms = sumDays(mDays), rest = c.rest;
+  var h = syncCard();
+  var usd = g.avgSell ? g.profit / g.avgSell : 0;
+  h += '<section class="hero"><div><div class="lbl">Профит сегодня</div><div class="big">' + signed(g.profit) + '</div><div class="usd">' + (g.sQ ? '≈ ' + usdt(usd) : 'Продаж сегодня ещё не было') + '</div></div>' +
+    '<div class="hmain">' + (dg ? goalBar(g.profit, dg, 'gd') + '<div class="hsub" style="margin-top:0">' + (g.profit >= dg ? 'Цель дня выполнена: ' + moneyS(dg) : 'Цель дня ' + moneyS(dg) + ' · осталось ' + moneyS(dg - g.profit)) + (G.day ? '' : ' (из цели месяца)') + '</div>' : '<button class="hsub" data-pact="goals" style="text-align:left;text-decoration:underline;text-underline-offset:3px;margin:0">Поставить цель на день</button>') +
+    '<div class="hrow3"><div><small>Спред</small><b>' + (g.spread !== null ? price(g.spread) + ' ₴' : '—') + '</b></div><div><small>Спред %</small><b>' + pct(g.spreadPct) + '</b></div><div><small>Продано</small><b>' + usdtS(g.sQ) + '</b></div><div><small>Ордеров</small><b>' + g.n + '</b></div></div></div></section>';
+  h += warnHtml(daysOfMonth(m).concat(c.byDay[td] ? [] : []));
+  // месяц
+  var mf = monthFracK(m), left = daysIn(m) - +td.slice(8, 10) + 1;
+  h += '<section class="card" data-pact="goals" style="cursor:pointer"><h2>' + esc(cap(monthName(m))) + '<span style="color:var(--accent);letter-spacing:0;text-transform:none;font-size:12.5px">' + (G.month ? 'Изменить цель' : 'Поставить цель') + '</span></h2>' +
+    '<div class="ghead"><b class="' + pnlCls(ms.profit) + '">' + signed(ms.profit) + '</b><span>' + (G.month ? 'из ' + moneyS(G.month) + ' · ' + pct(ms.profit / G.month, 0) : ms.days + ' ' + plural(ms.days, 'день', 'дня', 'дней') + ' с торговлей') + '</span></div>' +
+    (G.month ? goalBar(ms.profit, G.month, 'gm', mf) + '<div class="gfoot"><span>' + (ms.profit >= G.month ? 'Цель месяца выполнена' : 'Нужно в день: <b>' + moneyS(Math.max(0, G.month - ms.profit) / left) + '</b>') + '</span><span>Прогноз: <b>' + moneyS(mf > .03 ? ms.profit / mf : ms.profit) + '</b></span></div>' : '<div class="gfoot"><span>Средний спред <b>' + (ms.spread !== null ? price(ms.spread) + ' ₴' : '—') + '</b></span><span>Продано <b>' + usdtS(ms.sQ) + '</b></span></div>') +
+    '</section>';
+  // детали дня
+  h += '<div class="kpis">' +
+    '<div class="kpi"><small>Средняя покупка</small><b>' + price(g.cost !== null ? g.cost : rest.avg) + '</b><em>с учётом остатка</em></div>' +
+    '<div class="kpi"><small>Средняя продажа</small><b>' + price(g.avgSell) + '</b><em>' + (g.sQ ? usdtS(g.sQ) + ' за ' + moneyS(g.sU) : 'продаж нет') + '</em></div>' +
+    '<div class="kpi"><small>Куплено сегодня</small><b>' + usdtS(g.bQ) + '</b><em>' + (g.bQ ? 'за ' + moneyS(g.bU) + ' · ' + price(g.avgBuyDay) : 'покупок нет') + '</em></div>' +
+    '<div class="kpi"><small>Остаток USDT</small><b>' + usdtS(rest.q) + '</b><em>' + (rest.q > 0 ? 'по ' + price(rest.avg) + ' ≈ ' + moneyS(rest.q * rest.avg) : 'всё продано') + '</em></div></div>';
+  // последние сделки
+  var todays = c.deals.filter(function(d){ return d.day === td; }).slice(-8).reverse();
+  h += '<div class="sec"><span>Сделки сегодня</span><span>' + (g.n || '') + '</span></div>';
+  h += '<section class="card" style="padding-block:6px">' + (todays.length ? todays.map(function(d){ return dealRow(findDeal(d.id) || d); }).join('') : '<div class="empty">Сегодня сделок пока нет. Ордера OKX появятся сами, а нал добавь через «+».</div>') + '</section>';
+  if (todays.length) h += '<button class="btn ghost sm" data-psub="deals" style="max-width:320px">Все сделки</button>';
+  return h;
+}
+function dealRow(d){
+  if (!d) return '';
+  var c = calc(), pr = d.s === 's' && !d.off ? c.sale[d.id] : null, pp = d.q ? d.u / d.q : 0;
+  var tag = d.src === 'man' ? (d.g || 'Вручную') : (d.ed ? 'изменён' : '');
+  return '<button class="dl' + (d.off ? ' off' : '') + '" data-deal="' + esc(d.id) + '"><span class="oic ' + (d.s === 's' ? 'sell' : 'buy') + '">' + (d.s === 's' ? IC_SELL : IC_BUY) + '</span>' +
+    '<span class="mid"><span class="t1">' + (d.s === 's' ? 'Продажа ' : 'Покупка ') + usdt(d.q) + (tag ? '<span class="tag">' + esc(tag) + '</span>' : '') + (d.off ? '<span class="tag">не учитывается</span>' : '') + '</span>' +
+    '<span class="t2">' + timeStr(d.t) + ' · ' + price(pp) + ' ₴' + (d.c ? ' · ' + esc(d.c) : '') + (d.n ? ' · ' + esc(d.n) : '') + '</span></span>' +
+    '<span class="rt"><b>' + money(d.u, d.u >= 1000000) + '</b>' + (pr !== null && pr !== undefined ? '<small class="' + pnlCls(pr) + '">' + signed(pr) + '</small>' : '') + '</span></button>';
+}
+function mswitch(){
+  var m = PS.month;
+  return '<div class="mswitch"><button class="iconbtn" data-pm="-1" aria-label="Предыдущий месяц">' + IC_L + '</button><b>' + monthLabel(m) + '</b><button class="iconbtn" data-pm="1" aria-label="Следующий месяц"' + (m >= kyivMonth() ? ' disabled' : '') + '>' + IC_R + '</button></div>';
+}
+/* график профита по дням: столбики вверх (плюс) и вниз (минус) от нуля */
+function dayChart(m, days){
+  var n = daysIn(m), map = {}; days.forEach(function(g){ map[g.day] = g; });
+  var vals = [], mx = 0, mn = 0;
+  for (var i = 1; i <= n; i++){ var g = map[m + '-' + pad2(i)]; var v = g ? g.profit : 0; vals.push({i:i, v:v, g:g}); if (v > mx) mx = v; if (v < mn) mn = v; }
+  var dg = goals().day; if (dg && dg > mx) mx = dg;
+  if (mx === 0 && mn === 0) mx = 1;
+  var W = 620, H = 190, top = 8, bot = 22, ch = H - top - bot, rng = mx - mn, y0 = top + ch * (mx / rng);
+  var bw = W / n, gap = Math.max(2, bw * .28), w = Math.max(2, bw - gap);
+  var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Профит по дням">';
+  s += '<line class="base" x1="0" x2="' + W + '" y1="' + y0.toFixed(1) + '" y2="' + y0.toFixed(1) + '"/>';
+  if (dg){ var yg = top + ch * ((mx - dg) / rng); s += '<line class="goal" x1="0" x2="' + W + '" y1="' + yg.toFixed(1) + '" y2="' + yg.toFixed(1) + '"/>'; }
+  vals.forEach(function(x, k){
+    var x0 = k * bw + gap / 2, hgt = Math.abs(x.v) / rng * ch, cls = x.v > 0 ? 'bar-p' : x.v < 0 ? 'bar-n' : 'bar-z';
+    if (!x.g){ hgt = 0; }
+    var hh = Math.max(x.g ? 2 : 0, hgt), yy = x.v >= 0 ? y0 - hh : y0, r = Math.min(4, w / 2, hh);
+    if (hh > 0){
+      // скругляем только «свободный» конец столбика
+      var path = x.v >= 0
+        ? 'M' + x0 + ',' + y0 + 'V' + (yy + r) + 'Q' + x0 + ',' + yy + ' ' + (x0 + r) + ',' + yy + 'H' + (x0 + w - r) + 'Q' + (x0 + w) + ',' + yy + ' ' + (x0 + w) + ',' + (yy + r) + 'V' + y0 + 'Z'
+        : 'M' + x0 + ',' + y0 + 'V' + (y0 + hh - r) + 'Q' + x0 + ',' + (y0 + hh) + ' ' + (x0 + r) + ',' + (y0 + hh) + 'H' + (x0 + w - r) + 'Q' + (x0 + w) + ',' + (y0 + hh) + ' ' + (x0 + w) + ',' + (y0 + hh - r) + 'V' + y0 + 'Z';
+      s += '<path class="bm ' + cls + '" data-bi="' + x.i + '" d="' + path + '"/>';
+    }
+    if (x.i === 1 || x.i % 5 === 0 || x.i === n) s += '<text class="ax" x="' + (x0 + w / 2).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle">' + x.i + '</text>';
+    s += '<rect class="hit" data-bi="' + x.i + '" x="' + (k * bw).toFixed(1) + '" y="0" width="' + bw.toFixed(1) + '" height="' + (H - bot) + '"/>';
+  });
+  s += '</svg>';
+  return s;
+}
+function hourChart(c, m, by){
+  var hrs = []; for (var i = 0; i < 24; i++) hrs.push({h:i, profit:0, vol:0, n:0});
+  c.deals.forEach(function(d){ if (d.day.slice(0, 7) !== m) return; var x = hrs[d.hour]; x.n++; x.vol += d.u; if (d.s === 's') x.profit += c.sale[d.id] || 0; });
+  var key = by === 'vol' ? 'vol' : by === 'n' ? 'n' : 'profit';
+  var mx = 0, mn = 0; hrs.forEach(function(x){ if (x[key] > mx) mx = x[key]; if (x[key] < mn) mn = x[key]; }); if (!mx && !mn) mx = 1;
+  var W = 620, H = 150, top = 6, bot = 20, ch = H - top - bot, rng = mx - mn, y0 = top + ch * (mx / rng), bw = W / 24, gap = 4, w = bw - gap;
+  var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="По часам"><line class="base" x1="0" x2="' + W + '" y1="' + y0.toFixed(1) + '" y2="' + y0.toFixed(1) + '"/>';
+  hrs.forEach(function(x, k){
+    var v = x[key], hh = Math.abs(v) / rng * ch, x0 = k * bw + gap / 2, r = Math.min(4, w / 2, hh);
+    if (hh > 0.5){
+      var yy = v >= 0 ? y0 - hh : y0;
+      var path = v >= 0 ? 'M' + x0 + ',' + y0 + 'V' + (yy + r) + 'Q' + x0 + ',' + yy + ' ' + (x0 + r) + ',' + yy + 'H' + (x0 + w - r) + 'Q' + (x0 + w) + ',' + yy + ' ' + (x0 + w) + ',' + (yy + r) + 'V' + y0 + 'Z'
+        : 'M' + x0 + ',' + y0 + 'V' + (y0 + hh - r) + 'Q' + x0 + ',' + (y0 + hh) + ' ' + (x0 + r) + ',' + (y0 + hh) + 'H' + (x0 + w - r) + 'Q' + (x0 + w) + ',' + (y0 + hh) + ' ' + (x0 + w) + ',' + (y0 + hh - r) + 'V' + y0 + 'Z';
+      s += '<path class="bm ' + (key === 'profit' ? (v >= 0 ? 'bar-p' : 'bar-n') : 'bar-a') + '" data-hi="' + k + '" d="' + path + '"/>';
+    }
+    if (k % 3 === 0) s += '<text class="ax" x="' + (x0 + w / 2).toFixed(1) + '" y="' + (H - 5) + '" text-anchor="middle">' + k + '</text>';
+    s += '<rect class="hit" data-hi="' + k + '" x="' + (k * bw).toFixed(1) + '" y="0" width="' + bw.toFixed(1) + '" height="' + (H - bot) + '"/>';
+  });
+  return {svg:s + '</svg>', hrs:hrs, key:key};
+}
+var HOURS_CACHE = null;
+function vStats(){
+  var m = PS.month, c = calc(), days = daysOfMonth(m), ms = sumDays(days);
+  var h = mswitch();
+  h += '<div class="kpis">' +
+    '<div class="kpi"><small>Профит</small><b class="' + pnlCls(ms.profit) + '">' + signed(ms.profit, true) + '</b><em>' + (ms.avgSell ? '≈ ' + usdtS(ms.profit / ms.avgSell) : '—') + '</em></div>' +
+    '<div class="kpi"><small>В среднем за день</small><b>' + (ms.plus + ms.minus ? moneyS(ms.profit / (ms.plus + ms.minus)) : '—') + '</b><em>' + (ms.plus + ms.minus) + ' ' + plural(ms.plus + ms.minus, 'день', 'дня', 'дней') + ' с продажами' + (ms.minus ? ', в минусе ' + ms.minus : '') + '</em></div>' +
+    '<div class="kpi"><small>Лучший день</small><b class="pos">' + (ms.best ? signed(ms.best.profit, true) : '—') + '</b><em>' + (ms.best ? shortDate(ms.best.day) : '') + '</em></div>' +
+    '<div class="kpi"><small>Худший день</small><b class="' + (ms.worst ? pnlCls(ms.worst.profit) : '') + '">' + (ms.worst ? signed(ms.worst.profit, true) : '—') + '</b><em>' + (ms.worst ? shortDate(ms.worst.day) : '') + '</em></div></div>';
+  h += warnHtml(days);
+  if (!days.length) return h + '<section class="card"><div class="empty">За ' + esc(monthLabel(m).toLowerCase()) + ' сделок нет.</div></section>';
+  // профит по дням
+  var dflt = days[days.length - 1];
+  h += '<section class="card"><h2>Профит по дням</h2><div class="chart" id="dChart"><div class="tipline" id="dTip">' + dayTip(dflt) + '</div>' + dayChart(m, days) + '</div></section>';
+  h += '<div class="p-two">';
+  // цены и спред
+  h += '<section class="card"><h2>Цены и спред</h2>' +
+    '<div class="kv"><span>Средняя покупка</span><b>' + price(ms.avgBuy) + ' ₴</b></div>' +
+    '<div class="kv"><span>Средняя продажа</span><b>' + price(ms.avgSell) + ' ₴</b></div>' +
+    '<div class="kv"><span>Спред на 1 USDT</span><b class="' + pnlCls(ms.spread || 0) + '">' + (ms.spread !== null ? price(ms.spread) + ' ₴' : '—') + '</b></div>' +
+    '<div class="kv"><span>Спред в %</span><b>' + pct(ms.spreadPct, 3) + '</b></div>' +
+    '<p class="note">Спред здесь — сколько ты в среднем заработал на каждом проданном USDT, с учётом средней цены остатка. Средняя покупка — только покупки этого месяца.</p></section>';
+  // оборот
+  var n = 0, nb = 0, ns = 0; days.forEach(function(g){ nb += g.buys.length; ns += g.sells.length; }); n = nb + ns;
+  h += '<section class="card"><h2>Оборот</h2>' +
+    '<div class="kv"><span>Куплено</span><b>' + usdt(ms.bQ) + ' · ' + moneyS(ms.bU) + '</b></div>' +
+    '<div class="kv"><span>Продано</span><b>' + usdt(ms.sQ) + ' · ' + moneyS(ms.sU) + '</b></div>' +
+    '<div class="kv"><span>Всего через тебя</span><b>' + moneyS(ms.bU + ms.sU) + '</b></div>' +
+    '<div class="kv"><span>Ордеров</span><b>' + n + ' <span style="color:var(--muted);font-weight:500">(' + nb + ' покупок, ' + ns + ' продаж)</span></b></div>' +
+    '<div class="kv"><span>Средний ордер</span><b>' + (n ? moneyS((ms.bU + ms.sU) / n) : '—') + '</b></div></section>';
+  h += '</div>';
+  // контрагенты
+  var cps = {};
+  c.deals.forEach(function(d){ if (d.day.slice(0, 7) !== m) return; var k = d.c || 'Без имени', x = cps[k] = cps[k] || {name:k, profit:0, vol:0, n:0}; x.n++; x.vol += d.u; if (d.s === 's') x.profit += c.sale[d.id] || 0; });
+  var cl = Object.keys(cps).map(function(k){ return cps[k]; });
+  var sk = PS.statSort; cl.sort(function(a, b){ return sk === 'vol' ? b.vol - a.vol : sk === 'n' ? b.n - a.n : b.profit - a.profit; });
+  var mxv = 0; cl.forEach(function(x){ var v = Math.abs(sk === 'vol' ? x.vol : sk === 'n' ? x.n : x.profit); if (v > mxv) mxv = v; });
+  var shown = PS.cpAll ? cl : cl.slice(0, 8);
+  var sOpts = [['profit','По профиту'],['vol','По обороту'],['n','По ордерам']], si = 0; sOpts.forEach(function(o, i){ if (o[0] === sk) si = i; });
+  h += '<div class="p-two"><section class="card"><h2>Контрагенты<span>' + cl.length + '</span></h2><div class="seg segsm" style="--n:3"><span class="ind" style="--idx:' + si + '"></span>' + sOpts.map(function(o){ return '<button data-ss="' + o[0] + '" aria-pressed="' + (o[0] === sk) + '">' + o[1] + '</button>'; }).join('') + '</div>' +
+    shown.map(function(x){ var v = sk === 'vol' ? x.vol : sk === 'n' ? x.n : x.profit, w = mxv ? Math.abs(v) / mxv * 100 : 0;
+      return '<div class="rk"><div class="r1"><span>' + esc(x.name) + '</span><b class="' + (sk === 'profit' ? pnlCls(x.profit) : '') + '">' + (sk === 'vol' ? moneyS(x.vol) : sk === 'n' ? x.n + ' ' + plural(x.n, 'ордер', 'ордера', 'ордеров') : signed(x.profit, true)) + '</b></div><div class="rb"><i class="' + (v < 0 ? 'n' : '') + '" style="width:' + w.toFixed(1) + '%"></i></div><div class="r2"><span>' + x.n + ' ' + plural(x.n, 'ордер', 'ордера', 'ордеров') + ' · ' + moneyS(x.vol) + '</span><span>' + (sk !== 'profit' ? 'профит ' + signed(x.profit, true) : '') + '</span></div></div>'; }).join('') +
+    (cl.length > 8 ? '<button class="more" data-pact="cpall">' + (PS.cpAll ? 'Свернуть' : 'Показать всех (' + cl.length + ')') + '</button>' : '') +
+    '<p class="note">Профит считается только с продаж: продажа контрагенту минус средняя цена покупки этого дня.</p></section>';
+  // часы
+  var hc = hourChart(c, m, PS.hourBy); HOURS_CACHE = hc;
+  var best = hc.hrs.slice().sort(function(a, b){ return b[hc.key] - a[hc.key]; })[0];
+  var hOpts = [['profit','Профит'],['vol','Оборот'],['n','Ордера']], hi = 0; hOpts.forEach(function(o, i){ if (o[0] === PS.hourBy) hi = i; });
+  h += '<section class="card"><h2>По часам</h2><div class="seg segsm" style="--n:3"><span class="ind" style="--idx:' + hi + '"></span>' + hOpts.map(function(o){ return '<button data-hb="' + o[0] + '" aria-pressed="' + (o[0] === PS.hourBy) + '">' + o[1] + '</button>'; }).join('') + '</div>' +
+    '<div class="chart" id="hChart"><div class="tipline" id="hTip">' + hourTip(best, hc.key, true) + '</div>' + hc.svg + '</div><p class="note">Время по Киеву. Нажми на столбик, чтобы увидеть час.</p></section></div>';
+  return h;
+}
+function dayTip(g){
+  if (!g) return '<b>—</b><span></span>';
+  return '<div><span style="display:block;text-align:left">' + esc(cap(dayLabel(g.day))) + '</span><b class="' + pnlCls(g.profit) + '">' + signed(g.profit) + '</b></div><span>спред ' + (g.spread !== null ? price(g.spread) + ' ₴' : '—') + '<br>продано ' + usdtS(g.sQ) + ' · ' + g.n + ' орд.</span>';
+}
+function hourTip(x, key, best){
+  if (!x) return '';
+  var v = key === 'vol' ? moneyS(x.vol) : key === 'n' ? x.n + ' ' + plural(x.n, 'ордер', 'ордера', 'ордеров') : signed(x.profit);
+  return '<div><span style="display:block;text-align:left">' + (best ? 'Лучший час · ' : '') + pad2(x.h) + ':00–' + pad2((x.h + 1) % 24) + ':00</span><b class="' + (key === 'profit' ? pnlCls(x.profit) : '') + '">' + v + '</b></div><span>' + x.n + ' орд. · ' + moneyS(x.vol) + '<br>профит ' + signed(x.profit, true) + '</span>';
+}
+function vDeals(){
+  var m = PS.month, c = calc(), f = PS.dealF, q = PS.q.trim().toLowerCase();
+  var list = allDeals().filter(function(d){
+    if (kyiv(d.t).day.slice(0, 7) !== m) return false;
+    if (f === 'okx' && d.src !== 'okx') return false;
+    if (f === 'man' && d.src !== 'man') return false;
+    if (f === 'off' && !d.off) return false;
+    if (q && String(d.c || '').toLowerCase().indexOf(q) < 0 && String(d.n || '').toLowerCase().indexOf(q) < 0) return false;
+    return true;
+  }).sort(function(a, b){ return b.t - a.t; });
+  var h = mswitch();
+  var opts = [['all','Все'],['okx','OKX'],['man','Вручную'],['off','Скрытые']], ix = 0; opts.forEach(function(o, i){ if (o[0] === f) ix = i; });
+  h += '<div class="seg" style="--n:4"><span class="ind" style="--idx:' + ix + '"></span>' + opts.map(function(o){ return '<button data-df="' + o[0] + '" aria-pressed="' + (o[0] === f) + '">' + o[1] + '</button>'; }).join('') + '</div>';
+  h += '<label class="field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg><input id="pq" type="search" placeholder="Контрагент или заметка" value="' + esc(PS.q) + '" autocomplete="off"></label>';
+  if (!list.length) return h + '<section class="card"><div class="empty">' + (f === 'off' ? 'Исключённых сделок нет.' : 'За ' + esc(monthLabel(m).toLowerCase()) + ' сделок нет.') + '</div></section>';
+  var groups = [], cur = null;
+  list.forEach(function(d){ var dy = kyiv(d.t).day; if (!cur || cur.d !== dy){ cur = {d:dy, items:[]}; groups.push(cur); } cur.items.push(d); });
+  var lim = PS.dealLim || 25;
+  groups.slice(0, lim).forEach(function(g){
+    var gd = c.byDay[g.d];
+    h += '<div class="dayh2"><span>' + esc(dayLabel(g.d)) + '</span><span class="' + (gd ? pnlCls(gd.profit) : '') + '">' + (gd && gd.sQ ? signed(gd.profit) : '') + '</span></div><section class="card" style="padding-block:6px">' + g.items.map(dealRow).join('') + '</section>';
+  });
+  if (groups.length > lim) h += '<button class="btn ghost sm" data-pact="moredays">Показать ещё дни</button>';
+  return h;
+}
+
+/* ============ сделка: добавить / изменить ============ */
+var DL = null;
+function openDeal(d){
+  DL = d ? {id:d.id, m:d.m, orig:d, s:d.s, g:d.g || '', off:!!d.off, last:['q','u']} : {id:null, s:'s', g:'Нал', off:false, last:['q','p']};
+  var isOkx = d && d.src === 'okx';
+  $('#dTitle').textContent = d ? (isOkx ? 'Ордер OKX' : 'Сделка') : 'Новая сделка';
+  $('#dOkx').hidden = !isOkx; if (isOkx) $('#dOkx').textContent = '#' + d.id.replace(/^okx/, '') + (d.ed ? ' · изменён вручную' : '');
+  $('#dTags').hidden = isOkx;
+  $('#dQ').value = d ? inNum(d.q, 6) : ''; $('#dU').value = d ? inNum(d.u / 100, 2) : ''; $('#dP').value = d && d.q ? inNum(d.u / d.q / 100, 4) : '';
+  var t = d ? new Date(d.t) : new Date();
+  $('#dDate').value = dstr(t); $('#dTime').value = pad2(t.getHours()) + ':' + pad2(t.getMinutes());
+  $('#dC').value = d ? (d.c || '') : ''; $('#dN').value = d ? (d.n || '') : '';
+  var cps = {}; allDeals().forEach(function(x){ if (x.c) cps[x.c] = (cps[x.c] || 0) + 1; });
+  $('#dlCp').innerHTML = Object.keys(cps).sort(function(a, b){ return cps[b] - cps[a]; }).slice(0, 60).map(function(k){ return '<option value="' + esc(k) + '">'; }).join('');
+  $('#dOffT').hidden = !d; $('#dReset').hidden = !(isOkx && d.ed && d.o);
+  var del = $('#dDel'); del.hidden = !d || isOkx; del.classList.remove('armed'); del.textContent = 'Удалить сделку';
+  syncDeal(); openSheet('sDeal');
+}
+function syncDeal(){
+  setSeg($('#dSide'), DL.s === 's' ? 1 : 0); pressSet($('#dSide'), 'data-ds', DL.s);
+  pressSet($('#dTags'), 'data-dg', DL.g);
+  $('#dOffSw').setAttribute('aria-checked', String(!DL.off));
+  var q = num($('#dQ').value), u = num($('#dU').value), p = num($('#dP').value);
+  $('#dCalc').textContent = q > 0 && u > 0 ? usdt(q) + ' × ' + price(u / q * 100) + ' = ' + money(Math.round(u * 100)) : 'Впиши любые два числа — третье посчитается само.';
+}
+$('#dSide').addEventListener('click', function(e){ var b = e.target.closest('[data-ds]'); if (b){ DL.s = b.getAttribute('data-ds'); syncDeal(); } });
+$('#dTags').addEventListener('click', function(e){ var b = e.target.closest('[data-dg]'); if (b){ DL.g = DL.g === b.getAttribute('data-dg') ? '' : b.getAttribute('data-dg'); syncDeal(); } });
+$('#dOffT').addEventListener('click', function(){ DL.off = !DL.off; syncDeal(); });
+/* любые два поля → третье */
+['dQ','dP','dU'].forEach(function(idf){
+  $('#' + idf).addEventListener('input', function(){
+    var k = idf.slice(1).toLowerCase(); if (DL.last[1] !== k){ DL.last = [DL.last[1], k]; }
+    var q = num($('#dQ').value), p = num($('#dP').value), u = num($('#dU').value), L = DL.last;
+    var target = ['q','p','u'].filter(function(x){ return L.indexOf(x) < 0; })[0];
+    if (target === 'u' && q > 0 && p > 0) $('#dU').value = inNum(q * p, 2);
+    else if (target === 'p' && q > 0 && u > 0) $('#dP').value = inNum(u / q, 4);
+    else if (target === 'q' && p > 0 && u > 0) $('#dQ').value = inNum(u / p, 2);
+    syncDeal();
+  });
+});
+$('#dSave').addEventListener('click', function(){
+  var q = num($('#dQ').value), u = num($('#dU').value), p = num($('#dP').value);
+  if (!(u > 0) && q > 0 && p > 0) u = q * p;
+  if (!(q > 0) && u > 0 && p > 0) q = u / p;
+  if (!(q > 0)){ shake($('#dQ').parentNode); toast('Впиши количество USDT'); return; }
+  if (!(u > 0)){ shake($('#dU').parentNode); toast('Впиши сумму в гривнах или курс'); return; }
+  var ds = $('#dDate').value, tm = $('#dTime').value || '12:00';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ds)){ shake($('#dDate').parentNode); toast('Выбери дату'); return; }
+  var t = new Date(+ds.slice(0, 4), +ds.slice(5, 7) - 1, +ds.slice(8, 10), +tm.slice(0, 2), +tm.slice(3, 5), DL.orig ? new Date(DL.orig.t).getSeconds() : 0).getTime();
+  if (t > Date.now() + 5 * 60000){ toast('Дата в будущем'); return; }
+  q = Math.round(q * 1e6) / 1e6; u = Math.round(u * 100);
+  var o = DL.orig, d;
+  if (o){
+    d = {}; for (var k in o) if (k !== 'id' && k !== 'm') d[k] = o[k];
+    var changed = o.s !== DL.s || Math.abs(o.q - q) > 1e-6 || o.u !== u || Math.abs(o.t - t) > 59000;
+    if (o.src === 'okx' && changed){ if (!o.o) d.o = {s:o.s, q:o.q, u:o.u, t:o.t}; d.ed = 1; }
+    d.s = DL.s; d.q = q; d.u = u; d.t = t;
+  } else d = {s:DL.s, q:q, u:u, t:t, src:'man'};
+  d.c = $('#dC').value.trim().slice(0, 60); d.n = $('#dN').value.trim().slice(0, 120);
+  if (d.src === 'man') d.g = DL.g || '';
+  if (DL.off) d.off = 1; else delete d.off;
+  Object.keys(d).forEach(function(k){ if (d[k] === '' || d[k] === undefined) delete d[k]; });
+  var id = DL.id || ('man' + uid()), m = kyiv(t).day.slice(0, 7);
+  var p1 = store.putDeal(m, id, d);
+  if (DL.m && DL.m !== m) p1 = p1.then(function(){ return store.delDeal(DL.m, id); });
+  p1.catch(dbErr); bump(); vib(12);
+  toast(o ? 'Сохранено' : (DL.s === 's' ? 'Продажа' : 'Покупка') + ' ' + usdt(q) + ' добавлена'); closeSheet();
+});
+$('#dReset').addEventListener('click', function(){
+  var o = DL.orig; if (!o || !o.o) return;
+  var d = {}; for (var k in o) if (['id','m','o','ed'].indexOf(k) < 0) d[k] = o[k];
+  d.s = o.o.s; d.q = o.o.q; d.u = o.o.u; d.t = o.o.t;
+  var m = kyiv(d.t).day.slice(0, 7), p1 = store.putDeal(m, o.id, d);
+  if (o.m !== m) p1 = p1.then(function(){ return store.delDeal(o.m, o.id); });
+  p1.catch(dbErr); bump(); toast('Вернул данные OKX'); closeSheet();
+});
+$('#dDel').addEventListener('click', function(){ if (!arm($('#dDel'), 'Точно удалить?')) return; store.delDeal(DL.m, DL.id).catch(dbErr); bump(); toast('Сделка удалена'); closeSheet(); });
+
+/* ============ цели, остаток, сервер ============ */
+function moneyIn(k){ return k ? String(Math.round(k) / 100).replace('.', ',') : ''; }
+function openGoals(){ var G = goals(); $('#gDay').value = moneyIn(G.day); $('#gMonth').value = moneyIn(G.month); openSheet('sGoal'); }
+$('#gSave').addEventListener('click', function(){
+  var d = $('#gDay').value.trim() ? num($('#gDay').value) : 0, m = $('#gMonth').value.trim() ? num($('#gMonth').value) : 0;
+  if (isNaN(d)){ shake($('#gDay').parentNode); toast('Впиши цифрами'); return; }
+  if (isNaN(m)){ shake($('#gMonth').parentNode); toast('Впиши цифрами'); return; }
+  var g = {day:Math.round(d * 100), month:Math.round(m * 100)};
+  PS.set = Object.assign({}, PS.set, {goals:g}); store.setPSettings({goals:g}).catch(dbErr); toast('Цели сохранены'); closeSheet(); rr();
+});
+function openStart(){ var s = PS.set.start || {}; $('#stQ').value = s.q ? inNum(s.q, 2) : ''; $('#stP').value = s.avg ? inNum(s.avg / 100, 4) : ''; openSheet('sStart'); }
+$('#stSave').addEventListener('click', function(){
+  var q = $('#stQ').value.trim() ? num($('#stQ').value) : 0, p = $('#stP').value.trim() ? num($('#stP').value) : 0;
+  if (isNaN(q) || isNaN(p)){ toast('Впиши цифрами'); return; }
+  if (q > 0 && !(p > 0)){ shake($('#stP').parentNode); toast('Впиши среднюю цену'); return; }
+  var st = q > 0 ? {q:q, avg:Math.round(p * 10000) / 100} : null;
+  PS.set = Object.assign({}, PS.set, {start:st}); store.setPSettings({start:st}).catch(dbErr); toast(st ? 'Остаток сохранён' : 'Остаток убран'); closeSheet(); rr();
+});
+function makeDemoP(){
+  var now = Date.now(), months = {}, n = 0, rnd = 7;
+  function r(){ rnd = (rnd * 9301 + 49297) % 233280; return rnd / 233280; }
+  var cps = ['Ivan_P2P','MaxTrade','Olena.K','CryptoDen','vlad_ua','Artur K','Nika','TopMerchant'];
+  for (var dd = 40; dd >= 0; dd--){
+    var base = 4120 + Math.round(Math.sin(dd / 6) * 25), cnt = 4 + Math.floor(r() * 7);
+    for (var i = 0; i < cnt; i++){
+      var t = now - dd * 86400000 - Math.floor(r() * 14) * 3600000 - Math.floor(r() * 60) * 60000;
+      if (t > now) t = now - 60000;
+      var buy = r() < .5, q = Math.round((80 + r() * 900) * 100) / 100, p = buy ? base - 6 - Math.round(r() * 10) : base + 8 + Math.round(r() * 14);
+      if (r() < .06) p = base - 20;
+      var id = 'okxD' + (++n), m = kyiv(t).day.slice(0, 7);
+      (months[m] = months[m] || {})[id] = {s:buy ? 'b' : 's', q:q, u:Math.round(q * p), t:t, c:cps[Math.floor(r() * cps.length)], src:'okx', p:p};
+    }
+  }
+  var mm = kyivMonth();
+  months[mm]['manD1'] = {s:'s', q:500, u:500 * 4150, t:now - 3 * 3600000, c:'Знакомый', src:'man', g:'Нал', n:'встреча у метро'};
+  return {months:months, set:{goals:{day:150000, month:4000000}, histDone:true, syncTo:now}};
+}
+
+var PS = {months:{}, set:{}, view:'today', month:kyivMonth(), dealF:'all', q:'', statSort:'profit', hourBy:'profit', cpAll:false, dealLim:25, got:false, peopleAll:false};
+function rr(){ render(); }
+function setSeg(el, i){ el.querySelector('.ind').style.setProperty('--idx', i); }
+function pressSet(el, attr, val){ el.querySelectorAll('[' + attr + ']').forEach(function(b){ b.setAttribute('aria-pressed', String(b.getAttribute(attr) === val)); }); }
+
+/* профит по людям и картам: продажа OKX → записи «Лимитов» этого ордера (#последние 6 цифр) → карты */
+function byCards(m){
+  var c = calc(), tagOps = {}, res = {}, none = 0, noneN = 0;
+  S.ops.forEach(function(o){ if (o.dir !== 'in' || !o.note) return; var mm = /#([0-9A-Za-z]{6})(?![0-9A-Za-z])/.exec(o.note); if (mm) (tagOps[mm[1]] = tagOps[mm[1]] || []).push(o); });
+  c.deals.forEach(function(d){
+    if (d.s !== 's' || d.day.slice(0, 7) !== m) return;
+    var pr = c.sale[d.id] || 0, k = d.id.indexOf('okx') === 0 ? d.id.slice(3).slice(-6) : null, ops = k ? tagOps[k] : null;
+    if (!ops || !ops.length){ none += pr; noneN++; return; }
+    var tot = 0; ops.forEach(function(o){ tot += o.amount; });
+    ops.forEach(function(o){ var x = res[o.card] = res[o.card] || {p:0, n:0, v:0}; x.p += tot ? pr * o.amount / tot : 0; x.n++; x.v += o.amount; });
+  });
+  return {res:res, none:none, noneN:noneN};
+}
+function peopleHtml(m){
+  var b = byCards(m), people = {}, total = 0;
+  Object.keys(b.res).forEach(function(id){ var c = byId(S.cards, id); var h = c ? holderOf(c) : 'Удалённая карта'; var x = people[h] = people[h] || {name:h, p:0, n:0, v:0, cards:[]}; var r = b.res[id]; x.p += r.p; x.n += r.n; x.v += r.v; x.cards.push({c:c, r:r}); total += r.p; });
+  var list = Object.keys(people).map(function(k){ return people[k]; }).sort(function(a, b){ return b.p - a.p; });
+  if (!list.length && !b.noneN) return '';
+  var mx = 0; list.forEach(function(x){ if (Math.abs(x.p) > mx) mx = Math.abs(x.p); });
+  var h = '<section class="card"><h2>По людям и картам</h2>';
+  h += list.map(function(x){
+    x.cards.sort(function(a, b){ return b.r.p - a.r.p; });
+    return '<div class="rk"><div class="r1"><span>' + esc(x.name) + '</span><b class="' + pnlCls(x.p) + '">' + signed(x.p, true) + '</b></div><div class="rb"><i class="' + (x.p < 0 ? 'n' : '') + '" style="width:' + (mx ? Math.abs(x.p) / mx * 100 : 0).toFixed(1) + '%"></i></div>' +
+      x.cards.map(function(y){ return '<div class="r2"><span>' + (y.c ? esc(y.c.bank) + ' ••' + last4(y.c) : 'карта удалена') + ' · ' + y.r.n + ' ' + plural(y.r.n, 'продажа', 'продажи', 'продаж') + ' · ' + moneyS(y.r.v) + '</span><span class="' + pnlCls(y.r.p) + '">' + signed(y.r.p, true) + '</span></div>'; }).join('') + '</div>';
+  }).join('');
+  if (b.noneN) h += '<div class="rk"><div class="r1"><span style="color:var(--muted)">Без карты</span><b class="' + pnlCls(b.none) + '">' + signed(b.none, true) + '</b></div><div class="r2"><span>' + b.noneN + ' ' + plural(b.noneN, 'продажа', 'продажи', 'продаж') + ': нал, ручные сделки или ордера, которые не записаны на карту</span><span></span></div></div>';
+  return h + '<p class="note">Профит каждой продажи OKX делится между картами, на которые пришли деньги по этому ордеру.</p></section>';
+}
+
+function view(){
+  var subs = [['today','Сегодня'],['stats','Статистика'],['deals','Сделки']], ix = 0; subs.forEach(function(x, i){ if (x[0] === PS.view) ix = i; });
+  var h = '<div class="seg" style="--n:3"><span class="ind" style="--idx:' + ix + '"></span>' + subs.map(function(x){ return '<button data-psub="' + x[0] + '" aria-pressed="' + (x[0] === PS.view) + '">' + x[1] + '</button>'; }).join('') + '</div>';
+  if (PS.view === 'stats'){ var st = vStats(); var cut = st.indexOf('<div class="p-two"><section class="card"><h2>Контрагенты'); h += cut > -1 ? st.slice(0, cut) + peopleHtml(PS.month) + st.slice(cut) : st + peopleHtml(PS.month); }
+  else if (PS.view === 'deals') h += vDeals();
+  else h += vHome();
+  return h;
+}
+/* плашка на главной «Карт» */
+function todayCard(){
+  if (!PS.got) return '';
+  var td = kyivToday(), g = calc().byDay[td] || emptyDay(td), dg = dayGoal();
+  return '<button class="card ptoday" data-psub="today" type="button"><span class="pt1"><span class="lbl">Профит сегодня</span><b class="' + pnlCls(g.profit) + '">' + signed(g.profit) + '</b></span>' +
+    (dg ? '<span class="pt2">' + goalBar(g.profit, dg, 'pt') + '<small>' + (g.profit >= dg ? 'цель дня выполнена' : 'цель ' + moneyS(dg) + ' · осталось ' + moneyS(dg - g.profit)) + '</small></span>' : '<span class="pt2"><small>' + (g.sQ ? 'спред ' + price(g.spread) + ' ₴ · продано ' + usdtS(g.sQ) : 'продаж сегодня ещё не было') + '</small></span>') + '</button>';
+}
+/* карточка в настройках «Лимитов» */
+function settingsCard(){
+  var G = goals(), st = startBal(), rest = calc().rest;
+  return '<section class="card"><h2>Профит</h2>' +
+    '<div class="kv"><span>Цель на день</span><b>' + (G.day ? money(G.day, true) : 'не задана') + '</b></div>' +
+    '<div class="kv"><span>Цель на месяц</span><b>' + (G.month ? money(G.month, true) : 'не задана') + '</b></div>' +
+    '<div class="kv"><span>Остаток USDT сейчас</span><b>' + usdt(rest.q) + (rest.q > 0 ? ' по ' + price(rest.avg) : '') + '</b></div>' +
+    '<div class="kv"><span>Остаток на начало истории</span><b>' + (st ? usdt(st.q) + ' по ' + price(st.avg) : 'не указан') + '</b></div>' +
+    '<div class="kv"><span>История OKX</span><b>' + (PS.set.histAt ? 'загружена ' + shortDate(dstr(new Date(PS.set.histAt))) : PS.set.histDone ? 'загружена' : 'не загружена') + '</b></div>' +
+    (SYNC.err ? '<p class="note" style="color:var(--danger)">' + esc(SYNC.err) + '</p>' : '') +
+    '<p class="note">Профит по формуле средней цены: (средняя продажа − средняя покупка с учётом остатка) × проданные USDT, по дням с 00:00 по Киеву. Комиссии не вычитаются.</p>' +
+    '<div class="stack" style="margin-top:10px"><button class="btn ghost sm" data-pact="goals">Изменить цели</button><button class="btn ghost sm" data-pact="start">Остаток на начало истории</button><button class="btn ghost sm" data-pact="syncnow">Проверить новые ордера</button><button class="btn ghost sm" data-pact="import">Загрузить историю за 6 месяцев заново</button></div></section>';
+}
+/* клики внутри профита; вернёт true, если обработал */
+function click(e){
+  var bi = e.target.closest('[data-bi]');
+  if (bi && !bi.closest('.sheet') && $('#dChart')){ var ch = $('#dChart'); var dd = PS.month + '-' + pad2(+bi.getAttribute('data-bi')), g = calc().byDay[dd] || emptyDay(dd); $('#dTip').innerHTML = dayTip(g); ch.classList.add('has-sel'); ch.querySelectorAll('.bm').forEach(function(p){ p.classList.toggle('sel', p.getAttribute('data-bi') === bi.getAttribute('data-bi')); }); return true; }
+  var hiE = e.target.closest('[data-hi]');
+  if (hiE && HOURS_CACHE && $('#hChart')){ var x = HOURS_CACHE.hrs[+hiE.getAttribute('data-hi')]; $('#hTip').innerHTML = hourTip(x, HOURS_CACHE.key); var hc = $('#hChart'); hc.classList.add('has-sel'); hc.querySelectorAll('.bm').forEach(function(p){ p.classList.toggle('sel', p.getAttribute('data-hi') === hiE.getAttribute('data-hi')); }); return true; }
+  var t = e.target.closest('[data-psub],[data-deal],[data-pm],[data-df],[data-ss],[data-hb],[data-pact]');
+  if (!t || t.closest('.sheet')) return false;
+  if (t.hasAttribute('data-psub')){ PS.view = t.getAttribute('data-psub'); PS.dealLim = 25; if (S.view !== 'profit'){ S.view = 'profit'; window.scrollTo(0, 0); render(true); } else rr(); return true; }
+  if (t.hasAttribute('data-deal')){ var d = findDeal(t.getAttribute('data-deal')); if (d) openDeal(d); return true; }
+  if (t.hasAttribute('data-pm')){ if (t.disabled) return true; PS.month = shiftMonth(PS.month, +t.getAttribute('data-pm')); PS.dealLim = 25; rr(); return true; }
+  if (t.hasAttribute('data-df')){ PS.dealF = t.getAttribute('data-df'); rr(); return true; }
+  if (t.hasAttribute('data-ss')){ PS.statSort = t.getAttribute('data-ss'); rr(); return true; }
+  if (t.hasAttribute('data-hb')){ PS.hourBy = t.getAttribute('data-hb'); rr(); return true; }
+  var a = t.getAttribute('data-pact');
+  if (a === 'goals'){ openGoals(); return true; }
+  if (a === 'start'){ openStart(); return true; }
+  if (a === 'okx'){ go('settings'); return true; }
+  if (a === 'import'){ if (DEMO){ toast('В демо истории OKX нет'); return true; } if (!okxCfg()){ toast('Сначала подключи OKX в настройках'); return true; } importHistory(true); return true; }
+  if (a === 'syncnow'){ if (DEMO){ toast('В демо проверять нечего'); return true; } liveSync(true); return true; }
+  if (a === 'cpall'){ PS.cpAll = !PS.cpAll; rr(); return true; }
+  if (a === 'moredays'){ PS.dealLim = (PS.dealLim || 25) + 25; rr(); return true; }
+  return false;
+}
+document.addEventListener('input', function(e){ if (e.target && e.target.id === 'pq'){ PS.q = e.target.value; rr(); var q = $('#pq'); if (q){ q.focus(); try { q.setSelectionRange(q.value.length, q.value.length); } catch(x){} } } });
+function onData(c, v){
+  if (c === 'pdeals'){ PS.months = v || {}; bump(); PS.got = true; }
+  else if (c === 'pset'){ PS.set = v || {}; bump(); }
+  if (S.ready.c && S.ready.o) queueRender();
+}
+return {view:view, todayCard:todayCard, settingsCard:settingsCard, click:click, onData:onData, openDeal:openDeal, sync:liveSync, demo:makeDemoP, state:PS, calc:calc, byCards:byCards};
+})();
+
 /* ============ запуск ============ */
 var unlisten = null;
 function show(id){ ['splash','login','denied','main'].forEach(function(x){ document.getElementById(x).hidden = x !== id; }); }
 function onData(c, list){
   if (c === 'set'){ S.set = list || {}; if (S.ready.c && S.ready.o && !(document.activeElement && document.activeElement.type === 'color')) queueRender(); setTimeout(processOrders, 0); return; }
   if (c === 'orders'){ S.orders = (list || []).filter(function(o){ return o && o.orderId; }); queueRender(); setTimeout(processOrders, 0); return; }
+  if (c === 'pdeals' || c === 'pset'){ PROF.onData(c, list); return; }
   if (c === 'bot'){ S.bot = list || {}; if (S.view === 'settings') queueRender(); return; }
   if (c === 'cards'){ S.cards = list.filter(function(k){ return k && typeof k === 'object'; }).sort(function(a, b){ return (a.ts || 0) - (b.ts || 0); }); S.ready.c = true; }
   else { S.ops = list.filter(function(o){ return o && typeof o.amount === 'number' && o.date && o.card; }); S.ready.o = true; }
@@ -2473,9 +3210,11 @@ else {
 if ('serviceWorker' in navigator && location.protocol === 'https:' && window.top === window.self && !window.__PREVIEW__){
   window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
 }
+setInterval(function(){ if (shown && document.visibilityState === 'visible') PROF.sync(); }, 60000);
+setTimeout(function(){ PROF.sync(); }, 4000);
 setInterval(function(){ if (shown && !openSh && document.visibilityState === 'visible' && S.view === 'cards' && !(document.activeElement && document.activeElement.id === 'q')) render(); }, 10 * 60 * 1000);
 
-window.__parseReceipt = parseReceipt; window.__match = matchCards; window.__readPdf = readPdf;
+window.__parseReceipt = parseReceipt; window.__match = matchCards; window.__PROFS = PROF.state; window.__byCards = PROF.byCards; window.__readPdf = readPdf;
 if (window.__PREVIEW__){ window.__proc = function(){ DEMO = false; procBusy = false; processOrders(); }; window.__S = S; window.__test = function(t){ OP.src = "receipt"; applyParsed(parseReceipt(t)); }; window.__bal = function(id){ return cardBal(byId(S.cards, id)) / 100; }; window.__putOrder = function(o){ return store.put("lorders", o.id, o); }; }
 })();
 </script>
