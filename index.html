@@ -2365,8 +2365,10 @@ $('#fzSave').addEventListener('click', function(){
 });
 
 /* ============ автоторговля ============ */
+/* настройки живут в lsettings/main.trade (раньше — в .auto, которое конфликтовало с «Записывать квитанции сразу») */
+function tradeCfg(){ var t = S.set || {}; return t.trade || (t.auto && typeof t.auto === 'object' ? t.auto : {}); }
 function autoCardHtml(){
-  var a = (S.set || {}).auto || {}, t = (S.bot || {}).trade || {};
+  var a = tradeCfg(), t = (S.bot || {}).trade || {};
   var st = !a.on ? 'выключена' : (t.status || 'ждёт первого запуска сервера');
   var h = '<section class="card"><h2>Автоторговля OKX' + (a.on && a.dry !== false ? '<span style="color:var(--warn);letter-spacing:0;text-transform:none">тестовый режим</span>' : '') + '</h2>' +
     '<div class="kv"><span>Сейчас</span><b style="text-align:right;min-width:0">' + esc(st) + '</b></div>' +
@@ -2381,7 +2383,7 @@ function autoCardHtml(){
 function timeAgo(ts){ var m = Math.round((Date.now() - ts) / 60000); return m < 1 ? 'только что' : m < 60 ? m + ' мин назад' : Math.round(m / 60) + ' ч назад'; }
 var AU = null;
 function openAuto(){
-  var a = Object.assign({on:false, dry:true, start:'07:00', end:'23:00', days:[1,2,3,4,5,6,7], pos:3, quota:100, gap:0.8, minOrder:4000, jump:1, tgEach:false}, (S.set || {}).auto || {});
+  var a = Object.assign({on:false, dry:true, start:'07:00', end:'23:00', days:[1,2,3,4,5,6,7], pos:3, quota:100, gap:0.8, minOrder:4000, jump:1, tgEach:false}, tradeCfg());
   AU = {on:!!a.on, dry:a.dry !== false, tgEach:!!a.tgEach, days:(a.days || []).slice(), mode:a.mode === 'amount' ? 'amount' : 'full'};
   $('#auStart').value = a.start; $('#auEnd').value = a.end; $('#auPos').value = a.pos; $('#auQuota').value = String(a.quota).replace('.', ',');
   $('#auGap').value = String(a.gap).replace('.', ','); $('#auMin').value = a.minOrder; $('#auJump').value = String(a.jump).replace('.', ',');
@@ -2408,7 +2410,7 @@ $('#auSave').addEventListener('click', function(){
   if (!(a.jump > 0)) a.jump = 1;
   if (a.mode !== 'amount' && !a.days.length){ toast('Выбери хотя бы один день'); return; }
   if (a.mode !== 'amount' && a.start === a.end){ toast('Начало и конец смены совпадают'); return; }
-  S.set = Object.assign({}, S.set, {auto:a}); store.setSettings({auto:a}).catch(dbErr);
+  S.set = Object.assign({}, S.set, {trade:a}); store.setSettings({trade:a}).catch(dbErr);
   toast(a.on ? (a.dry ? 'Включено в тестовом режиме' : 'Автоторговля включена') : 'Автоторговля выключена', 3000); closeSheet(); render();
 });
 function okxRowHtml(){
