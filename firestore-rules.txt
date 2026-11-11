@@ -27,6 +27,8 @@ service cloud.firestore {
     // видит карты и настройки, может читать и добавлять записи (но не менять и не удалять)
     match /lcards/{id} {
       allow read: if isBot();
+      // баланс и «уже отправлено» со скрина банка (Telegram) — только эти поля
+      allow update: if isBot() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bal', 'balTs', 'limUsed']);
     }
     match /lsettings/{id} {
       allow read: if isBot();

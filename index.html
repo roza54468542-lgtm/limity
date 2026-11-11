@@ -1214,8 +1214,14 @@ function feeFor(cardId, amount){
 }
 function sum(a){ var s = 0; a.forEach(function(o){ s += o.amount || 0; }); return s; }
 function monthFrac(){ var m = curMonth(), d = new Date(); return (d.getDate() - 1 + (d.getHours() + d.getMinutes() / 60) / 24) / daysIn(m); }
+/* «уже отправлено» в месяце: если со скрина банка пришла реальная цифра (c.limUsed) — от неё + операции после */
+function sentOut(c, m){
+  var u = c.limUsed && c.limUsed.m === m ? c.limUsed : null;
+  if (!u) return sum(opsOf(c.id, m, 'out'));
+  return (u.amt || 0) + sum(opsOf(c.id, m, 'out').filter(function(o){ return (o.ts || 0) > (u.ts || 0); }));
+}
 function stat(c){
-  var m = curMonth(), out = sum(opsOf(c.id, m, 'out')), inn = sum(opsOf(c.id, m, 'in'));
+  var m = curMonth(), out = sentOut(c, m), inn = sum(opsOf(c.id, m, 'in'));
   var lim = c.limOut || 0, limIn = c.limIn || 0;
   var p = lim ? out / lim : 0, pIn = limIn ? inn / limIn : 0;
   var left = Math.max(0, lim - out), daysLeft = daysIn(m) - new Date().getDate() + 1;
