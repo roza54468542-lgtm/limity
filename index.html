@@ -285,6 +285,12 @@ input,select{font:inherit;color:inherit}
 .srow .st2{font-size:13px;color:var(--muted)}
 .salt{display:flex;flex-wrap:wrap;gap:6px;font-size:12.5px;color:var(--muted);align-items:center}
 .salt button{background:var(--surface-2);border-radius:99px;padding:5px 10px;font-size:12.5px;color:var(--ink)}
+.onl{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:12px 14px}
+.onl .onl-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.onl .onl-t b{font-size:15px}
+.onl .onl-t span{font-size:12.5px;color:var(--muted)}
+.onl .btn{width:auto;flex:none;padding-inline:14px}
+.onl.off{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--danger) 55%,transparent)}
 .attn{background:var(--surface);border-radius:var(--r-lg);padding:14px 16px;box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--warn) 55%,transparent)}
 .attn h2{font:700 12px/1.2 var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--warn);margin:0 0 6px;display:flex;justify-content:space-between;gap:8px}
 .ao{display:flex;align-items:center;gap:12px;padding:10px 0;width:100%;text-align:left}
@@ -1398,6 +1404,7 @@ function vPeople(){
   h += '<div class="filters"><div class="frow" style="grid-template-columns:minmax(0,1fr)"><label class="field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg><input id="q" type="search" placeholder="Найти карту: имя, банк или цифры" value="' + esc(S.q) + '" autocomplete="off"></label></div></div>';
   if (!S.cards.length) return h + '<section class="card"><div class="empty">Добавь первую карту: владелец, банк, номер и месячный лимит на отправку.</div><button class="btn ghost sm" data-act="newcard">Добавить карту</button></section>';
   if (S.q.trim()){ S.holder = 'all'; return h + '<div class="sec"><span>Найденные карты</span></div>' + cardsBlock(visibleCards()); }
+  h += onlineBarHtml();
   h += sellRecHtml();
   h += attentionHtml();
   h += PROF.todayCard();
@@ -2388,8 +2395,25 @@ function autoCardHtml(){
     (t.last ? '<div class="kv"><span>Последнее действие</span><b style="text-align:right;min-width:0;font-weight:500">' + esc(t.last) + (t.lastAt ? ' · ' + timeAgo(t.lastAt) : '') + '</b></div>' : '') +
     (t.err ? '<p class="note" style="color:var(--danger)">' + esc(t.err) + '</p>' : '') +
     '<p class="note">Для работы нужен API-ключ OKX с правом «Торговля» (Trade). Начни с тестового режима: сервер будет только писать в Telegram, что сделал бы.</p>' +
-    '<div class="stack" style="margin-top:8px"><button class="btn ghost sm" data-act="autocfg">Настроить</button></div></section>';
+    '<div class="stack" style="margin-top:8px"><button class="btn ghost sm" data-act="autocfg">Настроить</button>' + (okxOn() ? (isOffline() ? '<button class="btn sm" data-act="goonline">▶️ В онлайн</button>' : '<button class="btn sm danger" data-act="gooffline">⛔ Выйти из онлайна</button>') : '') + '</div></section>';
   return h;
+}
+/* ⛔ полный выход из онлайна: сервер скрывает ВСЕ объявления на OKX и ставит бота на паузу. Кнопка и на «Картах», и в настройках. */
+function isOffline(){ var t = (S.bot || {}).trade || {}; return S.offline !== undefined ? S.offline : /^⛔/.test(t.status || ''); }
+function onlineBarHtml(){
+  if (!okxOn()) return '';
+  var off = isOffline();
+  return '<section class="card onl' + (off ? ' off' : '') + '"><div class="onl-t"><b>' + (off ? '⛔ Не в онлайне' : '🟢 Онлайн') + '</b><span>' + (off ? 'Объявления скрыты, бот на паузе' : 'Объявления ведёт автоторговля') + '</span></div>' +
+    (off ? '<button class="btn sm" data-act="goonline">▶️ В онлайн</button>' : '<button class="btn sm danger" data-act="gooffline">⛔ Выйти из онлайна</button>') + '</section>';
+}
+function setOnline(on){
+  var t = S.set || {}, btn = document.querySelector(on ? '[data-act=goonline]' : '[data-act=gooffline]');
+  if (!on && btn && !btn.classList.contains('armed')){ btn.classList.add('armed'); btn.textContent = 'Точно? Нажми ещё раз'; setTimeout(function(){ if (btn) { btn.classList.remove('armed'); btn.textContent = '⛔ Выйти из онлайна'; } }, 4000); return; }
+  if (btn){ btn.disabled = true; btn.textContent = on ? 'Включаю…' : 'Скрываю объявления…'; }
+  okxCall(on ? '/online' : '/offline', t.okxUrl, t.okxKey).then(function(j){
+    S.offline = !on; S.offAt = Date.now(); render();
+    toast(on ? 'Снова в онлайне — бот ведёт объявления' : 'Вышел из онлайна: скрыто ' + ((j.hidden || []).length) + ' объявл.' + ((j.errors || []).length ? ', есть ошибки — смотри Telegram' : ''));
+  }).catch(function(e){ if (btn){ btn.disabled = false; } render(); toast('Не получилось: ' + e.message); });
 }
 function timeAgo(ts){ var m = Math.round((Date.now() - ts) / 60000); return m < 1 ? 'только что' : m < 60 ? m + ' мин назад' : Math.round(m / 60) + ' ч назад'; }
 var AU = null;
@@ -2799,6 +2823,8 @@ document.addEventListener('click', function(e){
   if (a === 'newcard') return openCard(null);
   if (a === 'newfop') return openFopEd(null);
   if (a === 'autocfg') return openAuto();
+  if (a === 'gooffline') return setOnline(false);
+  if (a === 'goonline') return setOnline(true);
   if (a === 'fees') return openFees();
   if (a === 'editpers') return openPers(S.person);
   if (a === 'cureset'){ PR.custom = null; savePrefs(); applyTheme(); return render(); }
@@ -3456,7 +3482,7 @@ function onData(c, list){
   if (c === 'orders'){ S.orders = (list || []).filter(function(o){ return o && o.orderId; }); queueRender(); setTimeout(processOrders, 0); return; }
   if (c === 'pdeals' || c === 'pset'){ PROF.onData(c, list); return; }
   if (c === 'phones'){ S.phones = list || []; if (S.view === 'warm' && S.ready.c && S.ready.o) queueRender(); return; }
-  if (c === 'bot'){ S.bot = list || {}; if (S.view === 'settings') queueRender(); return; }
+  if (c === 'bot'){ S.bot = list || {}; if (S.offline !== undefined && Date.now() - (S.offAt || 0) > 90000) S.offline = undefined; if (S.view === 'settings' || okxOn()) queueRender(); return; }
   if (c === 'cards'){ S.cards = list.filter(function(k){ return k && typeof k === 'object'; }).sort(function(a, b){ return (a.ts || 0) - (b.ts || 0); }); S.ready.c = true; }
   else { S.ops = list.filter(function(o){ return o && typeof o.amount === 'number' && o.date && o.card; }); S.ready.o = true; }
   queueRender();
