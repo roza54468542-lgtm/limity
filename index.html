@@ -290,6 +290,12 @@ input,select{font:inherit;color:inherit}
 .onl .onl-t b{font-size:15px}
 .onl .onl-t span{font-size:12.5px;color:var(--muted)}
 .onl .btn{width:auto;flex:none;padding-inline:14px}
+.autobtn{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--surface);border-radius:var(--r-lg);padding:12px 16px}
+.autobtn i{width:10px;height:10px;border-radius:50%;flex:none}
+.autobtn span{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.autobtn b{font-size:15px}
+.autobtn small{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.autobtn em{font-style:normal;font-size:22px;color:var(--muted)}
 .aoff{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--danger) 55%,transparent)}
 .onl.off{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--danger) 55%,transparent)}
 .attn{background:var(--surface);border-radius:var(--r-lg);padding:14px 16px;box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--warn) 55%,transparent)}
@@ -840,6 +846,11 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
 </section>
 
 <!-- Комиссии банков -->
+<section class="sheet" id="sAutoP" role="dialog" aria-modal="true" aria-labelledby="apTitle">
+  <div class="grab"></div>
+  <div class="sh-h"><h3 id="apTitle">Автоторговля OKX</h3><button class="x" data-close aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div id="apBody" class="stack"></div>
+</section>
 <section class="sheet" id="sFees" role="dialog" aria-modal="true" aria-labelledby="feTitle2">
   <div class="grab"></div>
   <div class="sh-h"><h3 id="feTitle2">Комиссии банков</h3><button class="x" data-close aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
@@ -1405,7 +1416,7 @@ function vPeople(){
   h += '<div class="filters"><div class="frow" style="grid-template-columns:minmax(0,1fr)"><label class="field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg><input id="q" type="search" placeholder="Найти карту: имя, банк или цифры" value="' + esc(S.q) + '" autocomplete="off"></label></div></div>';
   if (!S.cards.length) return h + '<section class="card"><div class="empty">Добавь первую карту: владелец, банк, номер и месячный лимит на отправку.</div><button class="btn ghost sm" data-act="newcard">Добавить карту</button></section>';
   if (S.q.trim()){ S.holder = 'all'; return h + '<div class="sec"><span>Найденные карты</span></div>' + cardsBlock(visibleCards()); }
-  if (okxOn()) h += autoCardHtml().replace('<section class="card">', '<section class="card' + (isOffline() ? ' aoff' : '') + '">');
+  if (okxOn()) h += autoBtnHtml();
   h += sellRecHtml();
   h += attentionHtml();
   h += PROF.todayCard();
@@ -2401,6 +2412,23 @@ function autoCardHtml(){
   return h;
 }
 /* ⛔ полный выход из онлайна: сервер скрывает ВСЕ объявления на OKX и ставит бота на паузу. Кнопка и на «Картах», и в настройках. */
+/* на главном экране — компактная кнопка; по нажатию — панель автоторговли в шторке */
+function autoBtnHtml(){
+  var a = tradeCfg(), t = (S.bot || {}).trade || {}, off = isOffline();
+  var st = off ? 'не в онлайне' : !a.on ? 'выключена' : t.hint ? '✍️ есть подсказка цены' : t.err ? 'есть ошибка' : (t.status || '…');
+  var col = off || t.err ? 'var(--danger)' : !a.on ? 'var(--muted)' : t.hint ? 'var(--warn)' : 'var(--ok)';
+  return '<button type="button" class="autobtn" data-act="autopanel"><i style="background:' + col + '"></i><span><b>Автоторговля' + (a.on && a.dry !== false ? ' · тест' : '') + '</b><small>' + esc(st) + '</small></span><em>›</em></button>';
+}
+function autoPanelHtml(){ return autoCardHtml().replace('<section class="card">', '<div>').replace(/<\/section>$/, '</div>').replace('<h2>Автоторговля OKX', '<h2 style="display:none">'); }
+function openAutoPanel(){ $('#apBody').innerHTML = autoPanelHtml(); openSheet('sAutoP'); }
+document.addEventListener('click', function(e){
+  var b = e.target.closest('#apBody [data-act]'); if (!b) return;
+  var a = b.getAttribute('data-act');
+  if (a === 'autocfg') return openAuto();
+  if (a === 'gooffline') return setOnline(false);
+  if (a === 'goonline') return setOnline(true);
+});
+function refreshAutoPanel(){ var ap = document.getElementById('sAutoP'); if (ap && ap.classList.contains('on')) $('#apBody').innerHTML = autoPanelHtml(); }
 function isOffline(){ var t = (S.bot || {}).trade || {}; return S.offline !== undefined ? S.offline : /^⛔/.test(t.status || ''); }
 function onlineBarHtml(){
   if (!okxOn()) return '';
@@ -2413,7 +2441,7 @@ function setOnline(on){
   if (!on && btn && !btn.classList.contains('armed')){ btn.classList.add('armed'); btn.textContent = 'Точно? Нажми ещё раз'; setTimeout(function(){ if (btn) { btn.classList.remove('armed'); btn.textContent = '⛔ Выйти из онлайна'; } }, 4000); return; }
   if (btn){ btn.disabled = true; btn.textContent = on ? 'Включаю…' : 'Скрываю объявления…'; }
   okxCall(on ? '/online' : '/offline', t.okxUrl, t.okxKey).then(function(j){
-    S.offline = !on; S.offAt = Date.now(); render();
+    S.offline = !on; S.offAt = Date.now(); render(); refreshAutoPanel();
     toast(on ? 'Снова в онлайне — бот ведёт объявления' : 'Вышел из онлайна: скрыто ' + ((j.hidden || []).length) + ' объявл.' + ((j.errors || []).length ? ', есть ошибки — смотри Telegram' : ''));
   }).catch(function(e){ if (btn){ btn.disabled = false; } render(); toast('Не получилось: ' + e.message); });
 }
@@ -2824,6 +2852,7 @@ document.addEventListener('click', function(e){
   var a = t.getAttribute('data-act');
   if (a === 'newcard') return openCard(null);
   if (a === 'newfop') return openFopEd(null);
+  if (a === 'autopanel') return openAutoPanel();
   if (a === 'autocfg') return openAuto();
   if (a === 'gooffline') return setOnline(false);
   if (a === 'goonline') return setOnline(true);
@@ -3484,7 +3513,7 @@ function onData(c, list){
   if (c === 'orders'){ S.orders = (list || []).filter(function(o){ return o && o.orderId; }); queueRender(); setTimeout(processOrders, 0); return; }
   if (c === 'pdeals' || c === 'pset'){ PROF.onData(c, list); return; }
   if (c === 'phones'){ S.phones = list || []; if (S.view === 'warm' && S.ready.c && S.ready.o) queueRender(); return; }
-  if (c === 'bot'){ S.bot = list || {}; if (S.offline !== undefined && Date.now() - (S.offAt || 0) > 90000) S.offline = undefined; if (S.view === 'settings' || okxOn()) queueRender(); return; }
+  if (c === 'bot'){ S.bot = list || {}; if (S.offline !== undefined && Date.now() - (S.offAt || 0) > 90000) S.offline = undefined; if (S.view === 'settings' || okxOn()) queueRender(); refreshAutoPanel(); return; }
   if (c === 'cards'){ S.cards = list.filter(function(k){ return k && typeof k === 'object'; }).sort(function(a, b){ return (a.ts || 0) - (b.ts || 0); }); S.ready.c = true; }
   else { S.ops = list.filter(function(o){ return o && typeof o.amount === 'number' && o.date && o.card; }); S.ready.o = true; }
   queueRender();
