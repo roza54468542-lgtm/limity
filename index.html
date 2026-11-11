@@ -2415,8 +2415,9 @@ function autoCardHtml(){
 /* на главном экране — компактная кнопка; по нажатию — панель автоторговли в шторке */
 function autoBtnHtml(){
   var a = tradeCfg(), t = (S.bot || {}).trade || {}, off = isOffline();
-  var st = off ? 'не в онлайне' : !a.on ? 'выключена' : t.hint ? '✍️ есть подсказка цены' : t.err ? 'есть ошибка' : (t.status || '…');
-  var col = off || t.err ? 'var(--danger)' : !a.on ? 'var(--muted)' : t.hint ? 'var(--warn)' : 'var(--ok)';
+  var okxOff = a.on && /офлайн на OKX/.test(t.status || '');
+  var st = off ? 'не в онлайне' : !a.on ? 'выключена' : okxOff ? '🔴 на OKX «Офлайн» — включи «Онлайн» в приложении OKX' : t.hint ? '✍️ есть подсказка цены' : t.err ? 'есть ошибка' : (t.status || '…');
+  var col = off || okxOff || t.err ? 'var(--danger)' : !a.on ? 'var(--muted)' : t.hint ? 'var(--warn)' : 'var(--ok)';
   return '<button type="button" class="autobtn" data-act="autopanel"><i style="background:' + col + '"></i><span><b>Автоторговля' + (a.on && a.dry !== false ? ' · тест' : '') + '</b><small>' + esc(st) + '</small></span><em>›</em></button>';
 }
 function autoPanelHtml(){ return autoCardHtml().replace('<section class="card">', '<div>').replace(/<\/section>$/, '</div>').replace('<h2>Автоторговля OKX', '<h2 style="display:none">'); }
@@ -2442,7 +2443,7 @@ function setOnline(on){
   if (btn){ btn.disabled = true; btn.textContent = on ? 'Включаю…' : 'Скрываю объявления…'; }
   okxCall(on ? '/online' : '/offline', t.okxUrl, t.okxKey).then(function(j){
     S.offline = !on; S.offAt = Date.now(); render(); refreshAutoPanel();
-    toast(on ? 'Снова в онлайне — бот ведёт объявления' : 'Вышел из онлайна: скрыто ' + ((j.hidden || []).length) + ' объявл.' + ((j.errors || []).length ? ', есть ошибки — смотри Telegram' : ''));
+    toast(on ? (j.okxOffline ? 'Бот включён, но на OKX ты «Офлайн» — включи «Онлайн» в приложении OKX' : 'Снова в онлайне — бот ведёт объявления') : 'Вышел из онлайна: скрыто ' + ((j.hidden || []).length) + ' объявл.' + ((j.errors || []).length ? ', есть ошибки — смотри Telegram' : ''));
   }).catch(function(e){ if (btn){ btn.disabled = false; } render(); toast('Не получилось: ' + e.message); });
 }
 function timeAgo(ts){ var m = Math.round((Date.now() - ts) / 60000); return m < 1 ? 'только что' : m < 60 ? m + ' мин назад' : Math.round(m / 60) + ' ч назад'; }
