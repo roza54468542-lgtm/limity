@@ -876,6 +876,11 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
     <div class="col"><div class="fl">Фильтр суммы, USDT</div><label class="field"><input id="auQuota" type="text" inputmode="decimal" value="100"></label></div>
   </div>
   <div class="col"><div class="fl">Зазор покупки, ₴</div><label class="field"><input id="auGap" type="text" inputmode="decimal" value="0,80"></label></div>
+  <div class="grid2">
+    <div class="col"><div class="fl">Перебивать до зазора, ₴</div><label class="field"><input id="auMinGap" type="text" inputmode="decimal" value="0,67"></label></div>
+    <div class="col"><div class="fl">Неосновные банки, % суммы</div><label class="field"><input id="auShare" type="text" inputmode="numeric" value="70"></label></div>
+  </div>
+  <p class="note" style="margin:0">Покупка по блокам: база = продажа − зазор, мой блок — до базы + 0,10. Кто в блоке дороже — перебиваю на 1 коп., но не дальше «продажа − этот зазор». Кто выше блока — не догоняю. Из стакана выкидываю платные объявления, демпинг и тех, у кого сделок или % меньше, чем у тебя.</p>
   <div class="col"><div class="fl">Пауза, если стакан прыгнул больше чем на, ₴</div><label class="field"><input id="auJump" type="text" inputmode="decimal" value="1"></label></div>
   </div>
   <div class="col"><div class="fl">Мин. ордер покупки, ₴</div><label class="field"><input id="auMin" type="text" inputmode="numeric" value="4000"></label></div>
@@ -2373,7 +2378,7 @@ function autoCardHtml(){
   var h = '<section class="card"><h2>Автоторговля OKX' + (a.on && a.dry !== false ? '<span style="color:var(--warn);letter-spacing:0;text-transform:none">тестовый режим</span>' : '') + '</h2>' +
     '<div class="kv"><span>Сейчас</span><b style="text-align:right;min-width:0">' + esc(st) + '</b></div>' +
     (a.on && a.mode === 'amount' ? '<div class="kv"><span>Режим</span><b style="text-align:right">только сумма покупки · от ' + (a.minOrder || 4000) + ' ₴</b></div>' : '') +
-    (a.on && a.mode !== 'amount' ? '<div class="kv"><span>Смена</span><b>' + esc((a.start || '07:00') + '–' + (a.end || '23:00')) + '</b></div><div class="kv"><span>Правило</span><b style="text-align:right">' + (+a.pos || 3) + '-е место · зазор ' + String(a.gap || 0.8).replace('.', ',') + ' ₴ · от ' + (a.minOrder || 4000) + ' ₴</b></div>' : '') +
+    (a.on && a.mode !== 'amount' ? '<div class="kv"><span>Смена</span><b>' + esc((a.start || '07:00') + '–' + (a.end || '23:00')) + '</b></div><div class="kv"><span>Правило</span><b style="text-align:right">' + (+a.pos || 3) + '-е место · зазор ' + String(a.gap || 0.8).replace('.', ',') + ' ₴ (перебивка до ' + String(a.minGap || 0.67).replace('.', ',') + ') · от ' + (a.minOrder || 4000) + ' ₴</b></div>' : '') +
     (t.last ? '<div class="kv"><span>Последнее действие</span><b style="text-align:right;min-width:0;font-weight:500">' + esc(t.last) + (t.lastAt ? ' · ' + timeAgo(t.lastAt) : '') + '</b></div>' : '') +
     (t.err ? '<p class="note" style="color:var(--danger)">' + esc(t.err) + '</p>' : '') +
     '<p class="note">Для работы нужен API-ключ OKX с правом «Торговля» (Trade). Начни с тестового режима: сервер будет только писать в Telegram, что сделал бы.</p>' +
@@ -2383,10 +2388,10 @@ function autoCardHtml(){
 function timeAgo(ts){ var m = Math.round((Date.now() - ts) / 60000); return m < 1 ? 'только что' : m < 60 ? m + ' мин назад' : Math.round(m / 60) + ' ч назад'; }
 var AU = null;
 function openAuto(){
-  var a = Object.assign({on:false, dry:true, start:'07:00', end:'23:00', days:[1,2,3,4,5,6,7], pos:3, quota:100, gap:0.8, minOrder:4000, jump:1, tgEach:false}, tradeCfg());
+  var a = Object.assign({on:false, dry:true, start:'07:00', end:'23:00', days:[1,2,3,4,5,6,7], pos:3, quota:100, gap:0.8, minOrder:4000, jump:1, tgEach:false, minGap:0.67, share2:70}, tradeCfg());
   AU = {on:!!a.on, dry:a.dry !== false, tgEach:!!a.tgEach, days:(a.days || []).slice(), mode:a.mode === 'amount' ? 'amount' : 'full'};
   $('#auStart').value = a.start; $('#auEnd').value = a.end; $('#auPos').value = a.pos; $('#auQuota').value = String(a.quota).replace('.', ',');
-  $('#auGap').value = String(a.gap).replace('.', ','); $('#auMin').value = a.minOrder; $('#auJump').value = String(a.jump).replace('.', ',');
+  $('#auGap').value = String(a.gap).replace('.', ','); $('#auMin').value = a.minOrder; $('#auJump').value = String(a.jump).replace('.', ','); $('#auMinGap').value = String(a.minGap).replace('.', ','); $('#auShare').value = a.share2;
   syncAuto(); openSheet('sAuto');
 }
 function syncAuto(){
@@ -2402,9 +2407,11 @@ $('#auMode').addEventListener('click', function(e){ var b = e.target.closest('[d
 $('#auDays').addEventListener('click', function(e){ var b = e.target.closest('[data-dw]'); if (!b) return; var d = +b.getAttribute('data-dw'), i = AU.days.indexOf(d); if (i > -1) AU.days.splice(i, 1); else AU.days.push(d); AU.days.sort(); syncAuto(); });
 $('#auSave').addEventListener('click', function(){
   var n = function(id){ return parseFloat(String($(id).value).replace(',', '.').replace(/\s/g, '')); };
-  var a = {on:AU.on, dry:AU.dry, tgEach:AU.tgEach, mode:AU.mode, days:AU.days, start:$('#auStart').value || '07:00', end:$('#auEnd').value || '23:00', pos:Math.round(n('#auPos')), quota:n('#auQuota'), gap:n('#auGap'), minOrder:Math.round(n('#auMin')), jump:n('#auJump')};
+  var a = {on:AU.on, dry:AU.dry, tgEach:AU.tgEach, mode:AU.mode, days:AU.days, start:$('#auStart').value || '07:00', end:$('#auEnd').value || '23:00', pos:Math.round(n('#auPos')), quota:n('#auQuota'), gap:n('#auGap'), minOrder:Math.round(n('#auMin')), jump:n('#auJump'), minGap:n('#auMinGap'), share2:Math.round(n('#auShare'))};
   if (!(a.pos >= 1 && a.pos <= 10)){ shake($('#auPos').parentNode); toast('Место — от 1 до 10'); return; }
   if (!(a.quota > 0)){ shake($('#auQuota').parentNode); toast('Фильтр суммы — число USDT'); return; }
+  if (a.mode !== 'amount' && !(a.minGap >= 0.3 && a.minGap <= a.gap)){ shake($('#auMinGap').parentNode); toast('«Перебивать до зазора» — от 0,30 и не больше основного зазора'); return; }
+  if (!(a.share2 >= 1 && a.share2 <= 100)){ shake($('#auShare').parentNode); toast('Процент для неосновных — от 1 до 100'); return; }
   if (!(a.gap >= 0.5)){ shake($('#auGap').parentNode); toast('Зазор не меньше 0,50 ₴ — защита от слишком узкого спреда'); return; }
   if (!(a.minOrder >= 100)){ shake($('#auMin').parentNode); toast('Минимальный ордер — от 100 ₴'); return; }
   if (!(a.jump > 0)) a.jump = 1;
