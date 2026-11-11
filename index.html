@@ -277,6 +277,14 @@ input,select{font:inherit;color:inherit}
 .card .togrow+.togrow{margin-top:12px}
 .dupe{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--ink);border-radius:var(--r-md);padding:9px 12px;font-size:13px;font-weight:600}
 
+.srec{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--ok) 55%,transparent)}
+.srec h2{color:var(--ok)}
+.srow{display:flex;flex-direction:column;gap:6px;padding:8px 0}
+.srow+.srow{border-top:1px solid var(--line)}
+.srow .st1{font-size:14.5px}
+.srow .st2{font-size:13px;color:var(--muted)}
+.salt{display:flex;flex-wrap:wrap;gap:6px;font-size:12.5px;color:var(--muted);align-items:center}
+.salt button{background:var(--surface-2);border-radius:99px;padding:5px 10px;font-size:12.5px;color:var(--ink)}
 .attn{background:var(--surface);border-radius:var(--r-lg);padding:14px 16px;box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--warn) 55%,transparent)}
 .attn h2{font:700 12px/1.2 var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--warn);margin:0 0 6px;display:flex;justify-content:space-between;gap:8px}
 .ao{display:flex;align-items:center;gap:12px;padding:10px 0;width:100%;text-align:left}
@@ -1379,6 +1387,7 @@ function vPeople(){
   h += '<div class="filters"><div class="frow" style="grid-template-columns:minmax(0,1fr)"><label class="field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg><input id="q" type="search" placeholder="Найти карту: имя, банк или цифры" value="' + esc(S.q) + '" autocomplete="off"></label></div></div>';
   if (!S.cards.length) return h + '<section class="card"><div class="empty">Добавь первую карту: владелец, банк, номер и месячный лимит на отправку.</div><button class="btn ghost sm" data-act="newcard">Добавить карту</button></section>';
   if (S.q.trim()){ S.holder = 'all'; return h + '<div class="sec"><span>Найденные карты</span></div>' + cardsBlock(visibleCards()); }
+  h += sellRecHtml();
   h += attentionHtml();
   h += PROF.todayCard();
   var ps = personStats();
@@ -2223,6 +2232,38 @@ function okxFileUrl(u){ var t = S.set || {}; return String(t.okxUrl).replace(/\/
 function orderDir(o){ return o.side === 'sell' ? 'in' : 'out'; }
 function orderDate(o){ return o.created ? dstr(new Date(Number(o.created))) : today(); }
 function orderTitle(o){ return (o.side === 'sell' ? 'Продажа' : 'Покупка') + ' ' + money(o.fiat || 0) + (o.counterparty ? ' · ' + o.counterparty : ''); }
+/* ============ какую карту дать на продаже ============
+   Деньги, пришедшие на карту, потом уходят с неё — поэтому «свободно» = остаток лимита на отправку минус то, что уже лежит на карте
+   (и минус суммы других открытых продаж, которые мы туда же посоветовали). Если задан лимит на получение — он тоже должен вмещать сумму. */
+function recCards(amt, reserved){
+  reserved = reserved || {};
+  var rows = S.cards.filter(function(c){ return !c.off && digits(c.number); }).map(function(c){
+    var s = stat(c), bal = Math.max(0, cardBal(c) || 0), r = reserved[c.id] || 0;
+    var free = s.lim ? s.left - bal - r : null;           // null = лимит на отправку не задан
+    var inOk = !s.limIn || s.leftIn - r >= amt;
+    return {c:c, free:free, inOk:inOk};
+  });
+  var fit = rows.filter(function(x){ return x.inOk && (x.free === null || x.free >= amt); })
+    .sort(function(a, b){ return (a.free === null) - (b.free === null) || (b.free || 0) - (a.free || 0); });
+  if (fit.length) return {best:fit[0], alts:fit.slice(1, 3), short:false};
+  var any = rows.filter(function(x){ return x.free !== null; }).sort(function(a, b){ return b.free - a.free; });
+  return {best:any[0] || null, alts:any.slice(1, 3), short:true};
+}
+function sellRecHtml(){
+  var list = S.orders.filter(function(o){ return o.side === 'sell' && o.status === 'new' && !o.done && o.fiat > 0; }).sort(function(a, b){ return (a.created || 0) - (b.created || 0); });
+  if (!list.length || !S.cards.length) return '';
+  var reserved = {};
+  return '<section class="card srec"><h2>Продажа · какую карту дать</h2>' + list.map(function(o){
+    var r = recCards(o.fiat, reserved);
+    if (!r.best) return '<div class="srow"><b>' + esc(orderTitle(o)) + '</b><p class="note">Нет активных карт с номером.</p></div>';
+    reserved[r.best.c.id] = (reserved[r.best.c.id] || 0) + o.fiat;
+    var fr = function(x){ return x.free === null ? 'лимит не задан' : 'свободно ' + moneyS(Math.max(0, x.free)); };
+    return '<div class="srow"><div class="st1"><b>' + esc(orderTitle(o)) + '</b></div>' +
+      '<div class="st2">' + esc(r.best.c.bank + ' · ' + (r.best.c.holder || '')) + ' · <span style="color:' + (r.short ? 'var(--danger)' : 'var(--ok)') + '">' + (r.short ? 'не влезает: ' : '') + fr(r.best) + '</span></div>' +
+      copyBtn(r.best.c) +
+      (r.alts.length ? '<div class="salt">Ещё: ' + r.alts.map(function(x){ return '<button type="button" data-copy="' + esc(x.c.id) + '">' + esc(x.c.bank + ' ••' + last4(x.c)) + ' · ' + fr(x) + '</button>'; }).join('') + '</div>' : '') + '</div>';
+  }).join('') + '</section>';
+}
 function attentionHtml(){
   var list = S.orders.filter(function(o){ return o.need && !o.done; }).sort(function(a, b){ return (b.created || 0) - (a.created || 0); });
   if (!list.length) return '';
