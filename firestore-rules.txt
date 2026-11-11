@@ -1,9 +1,46 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if request.auth != null
+
+    // Ты: всё
+    function isMe() {
+      return request.auth != null
         && request.auth.token.email == 'roza54468542@gmail.com';
+    }
+    // Сервер OKX
+    function isBot() {
+      return request.auth != null
+        && request.auth.token.email == 'okx-bot@limity.app';
+    }
+
+    match /{document=**} {
+      allow read, write: if isMe();
+    }
+    // ордера и своё состояние — полностью
+    match /lorders/{id} {
+      allow read, write: if isBot();
+    }
+    match /lbot/{id} {
+      allow read, write: if isBot();
+    }
+    // чтобы сервер сам записывал квитанции на карты:
+    // видит карты и настройки, может читать и добавлять записи (но не менять и не удалять)
+    match /lcards/{id} {
+      allow read: if isBot();
+    }
+    match /lsettings/{id} {
+      allow read: if isBot();
+    }
+    match /lops/{id} {
+      allow read, create: if isBot();
+    }
+    // заряд телефонов (присылают сами телефоны через сервер)
+    match /lphones/{id} {
+      allow read, write: if isBot();
+    }
+    // покупки «под вопросом» (ждут 10 минут, не перевод ли это по ордеру)
+    match /lpend/{id} {
+      allow read, write: if isBot();
     }
   }
 }

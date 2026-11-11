@@ -185,6 +185,7 @@ input,select{font:inherit;color:inherit}
 .filters{display:flex;flex-direction:column;gap:8px}
 .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:1px}
 .chips::-webkit-scrollbar{display:none}
+.sheet .chips,.sheet>*{flex-shrink:0}
 .chip{padding:8px 13px;border-radius:var(--r-md);background:var(--surface);font-size:13.5px;font-weight:600;white-space:nowrap;flex:none;transition:background .2s,color .2s,transform .15s;color:var(--muted)}
 .chip:active{transform:scale(.95)}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
@@ -371,6 +372,8 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
 .queue{font-size:12.5px;color:var(--muted);font-weight:600}
 .optcards{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;padding:1px}
 #oWho .chip{background:var(--surface-2);padding:7px 12px;font-size:13px}
+#auDays .chip,#dTags .chip{display:inline-flex;align-items:center;background:var(--surface-2);padding:7px 12px;font-size:13px;font-weight:600;color:var(--ink);min-width:40px;justify-content:center}
+#auDays .chip[aria-pressed="true"],#dTags .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 #oWho .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 .ocg{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:6px 2px 0}
 .oc{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:var(--r-md);background:var(--surface-2);text-align:left;width:100%;transition:background .2s,color .2s}
@@ -665,6 +668,15 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
 .pprog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
 .okxid{font-size:12.5px;color:var(--muted);font-family:var(--f-mono)}
 @media (min-width:900px){ .p-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start} .p-two>*{min-width:0} }
+/* прогрев */
+.wm{display:flex;align-items:center;gap:12px;padding:10px 0;width:100%;text-align:left}
+.wm+.wm{border-top:1px solid var(--line)}
+.wm .mid{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.wm .t1{display:flex;align-items:center;gap:6px;font-weight:600;font-size:14.5px}
+.wm .t2{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wm .rt{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:none;text-align:right}
+.wm .rt b{font-size:13.5px;white-space:nowrap}
+.wm .rt small{font-size:12px;color:var(--muted)}
 /* вкладка «Профит» в «Лимитах» */
 .nav .in{grid-template-columns:repeat(5,1fr)}
 @media (min-width:900px){ .nav .in{grid-template-columns:none} .nav .mob{display:none!important} }
@@ -726,7 +738,8 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
       <button class="tab" data-tab="profit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Профит</button>
       <button class="fab" id="fab" aria-label="Добавить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="desk" id="fabTxt">Добавить перевод</span></button>
       <button class="tab" data-tab="hist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r=".6" fill="currentColor"/><circle cx="4" cy="12" r=".6" fill="currentColor"/><circle cx="4" cy="18" r=".6" fill="currentColor"/></svg>История</button>
-      <button class="tab mob" data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Ещё</button>
+      <button class="tab" data-tab="warm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 3 4 4.5 4 8.5a4 4 0 0 1-8 0c0-1.6.7-2.8 1.6-3.7C10 9.5 11 8 12 3z"/><path d="M12 21a6 6 0 0 0 6-6"/></svg>Прогрев</button>
+      <button class="tab mob" data-tab="settings" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Ещё</button>
       <button class="tab desk setl" data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Настройки</button>
       <button class="tab desk fsl" id="fsBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span id="fsTxt">На весь экран</span></button>
     </div>
@@ -809,6 +822,55 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
   </div>
   <button class="btn" id="cSave" type="button">Сохранить</button>
   <button class="btn danger" id="cDel" type="button" hidden>Удалить карту</button>
+</section>
+
+<!-- Комиссии банков -->
+<section class="sheet" id="sFees" role="dialog" aria-modal="true" aria-labelledby="feTitle2">
+  <div class="grab"></div>
+  <div class="sh-h"><h3 id="feTitle2">Комиссии банков</h3><button class="x" data-close aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <p class="note" style="margin:0">Комиссия за отправку с карты: процент от суммы, но не меньше минимума, плюс фикс. Пустое поле — 0. Считается для отправок (покупка USDT) и переводов между своими картами, списывается с баланса карты и вычитается из профита.</p>
+  <div class="stack" id="fzList"></div>
+  <button class="btn" id="fzSave" type="button">Сохранить</button>
+</section>
+
+<!-- Покупка (прогрев) -->
+<section class="sheet" id="sBuy" role="dialog" aria-modal="true" aria-labelledby="byTitle">
+  <div class="grab"></div>
+  <div class="sh-h"><h3 id="byTitle">Покупка для прогрева</h3><button class="x" data-close aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="fl">Карта</div>
+  <div class="optcards" id="byCards"></div>
+  <div class="grid2">
+    <div class="col"><div class="fl">Сумма</div><label class="field"><input id="byAmt" type="text" inputmode="decimal" placeholder="200" autocomplete="off"><span class="suf">₴</span></label></div>
+    <div class="col"><div class="fl">Дата</div><label class="field"><input id="byDate" type="date"></label></div>
+  </div>
+  <label class="field"><input id="byNote" type="text" maxlength="50" placeholder="Где: АТБ, Сильпо…" autocomplete="off"></label>
+  <button class="btn" id="bySave" type="button">Записать покупку</button>
+</section>
+
+<!-- Автоторговля -->
+<section class="sheet" id="sAuto" role="dialog" aria-modal="true" aria-labelledby="auTitle">
+  <div class="grab"></div>
+  <div class="sh-h"><h3 id="auTitle">Автоторговля</h3><button class="x" data-close aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <button class="togrow" id="auOnT" type="button"><span>Включить<span class="cnt">В смену сервер сам держит место в стакане и обновляет суммы</span></span><span class="switch" id="auOnSw" role="switch" aria-checked="false"></span></button>
+  <button class="togrow" id="auDryT" type="button"><span>Тестовый режим<span class="cnt">Ничего не меняет на OKX — только пишет в Telegram, что сделал бы</span></span><span class="switch" id="auDrySw" role="switch" aria-checked="true"></span></button>
+  <div class="grid2">
+    <div class="col"><div class="fl">Начало смены</div><label class="field"><input id="auStart" type="time" value="07:00"></label></div>
+    <div class="col"><div class="fl">Конец смены</div><label class="field"><input id="auEnd" type="time" value="23:00"></label></div>
+  </div>
+  <div class="fl">Дни</div>
+  <div class="chips" id="auDays"><button type="button" class="chip" data-dw="1">Пн</button><button type="button" class="chip" data-dw="2">Вт</button><button type="button" class="chip" data-dw="3">Ср</button><button type="button" class="chip" data-dw="4">Чт</button><button type="button" class="chip" data-dw="5">Пт</button><button type="button" class="chip" data-dw="6">Сб</button><button type="button" class="chip" data-dw="7">Вс</button></div>
+  <div class="grid2">
+    <div class="col"><div class="fl">Место в стакане продаж</div><label class="field"><input id="auPos" type="text" inputmode="numeric" value="3"></label></div>
+    <div class="col"><div class="fl">Фильтр суммы, USDT</div><label class="field"><input id="auQuota" type="text" inputmode="decimal" value="100"></label></div>
+  </div>
+  <div class="grid2">
+    <div class="col"><div class="fl">Зазор покупки, ₴</div><label class="field"><input id="auGap" type="text" inputmode="decimal" value="0,80"></label></div>
+    <div class="col"><div class="fl">Мин. ордер покупки, ₴</div><label class="field"><input id="auMin" type="text" inputmode="numeric" value="4000"></label></div>
+  </div>
+  <div class="col"><div class="fl">Пауза, если стакан прыгнул больше чем на, ₴</div><label class="field"><input id="auJump" type="text" inputmode="decimal" value="1"></label></div>
+  <button class="togrow" id="auTgT" type="button"><span>Сообщать о каждом изменении<span class="cnt">Иначе — только начало/конец смены, паузы и ошибки</span></span><span class="switch" id="auTgSw" role="switch" aria-checked="false"></span></button>
+  <p class="note" style="margin:0">Продажа: цена как у N-го чужого объявления среди тех, кто принимает ордер на «фильтр» USDT, — ты на N–N+1 месте; сумма — весь USDT на P2P-балансе; нет USDT — продажа скрыта. Покупка: цена продажи минус зазор (не меньше 0,50 ₴); сумма — деньги на активных картах, лимит ордера «мин. ордер – всё»; меньше минимума — покупка скрыта. Пока по объявлению идёт ордер, сервер его не трогает. В конце смены оба объявления скрываются.</p>
+  <button class="btn" id="auSave" type="button">Сохранить</button>
 </section>
 
 <!-- Человек -->
@@ -1125,8 +1187,14 @@ function opsMonth(cardId, m, dir){ return S.ops.filter(function(o){ return o.car
 function cardBal(c){
   if (typeof c.bal !== 'number') return null;
   var b = c.bal, t = c.balTs || 0;
-  S.ops.forEach(function(o){ if (o.card === c.id && o.bal !== false && (o.ts || 0) > t) b += o.dir === 'in' ? o.amount : -o.amount; });
+  S.ops.forEach(function(o){ if (o.card === c.id && o.bal !== false && (o.ts || 0) > t) b += o.dir === 'in' ? o.amount : -o.amount - (o.fee || 0); });
   return b;
+}
+/* комиссия банка за отправку: % от суммы (не меньше минимума) + фикс. Задаётся в настройках по банку. */
+function feeCfg(c){ var f = ((S.set || {}).bankFees || {})[bankKey(c && c.bank)]; return f && (f.pct || f.min || f.fix) ? f : null; }
+function feeFor(cardId, amount){
+  var f = feeCfg(byId(S.cards, cardId)); if (!f || !(amount > 0)) return 0;
+  return Math.round(Math.max(f.min || 0, amount * (f.pct || 0) / 100) + (f.fix || 0));
 }
 function sum(a){ var s = 0; a.forEach(function(o){ s += o.amount || 0; }); return s; }
 function monthFrac(){ var m = curMonth(), d = new Date(); return (d.getDate() - 1 + (d.getHours() + d.getMinutes() / 60) / 24) / daysIn(m); }
@@ -1242,6 +1310,7 @@ function FirebaseStore(db){
       un.push(db.collection('lops').where('date', '>=', from).onSnapshot(function(s){ cb('ops', s.docs.map(function(d){ var o = d.data(); o.id = d.id; return o; })); }, dbErr));
       un.push(db.collection('lsettings').doc('main').onSnapshot(function(d){ cb('set', d.exists ? d.data() : {}); }, dbErr));
       un.push(db.collection('lorders').where('firstSeen', '>=', Date.now() - 7 * 86400000).onSnapshot(function(s){ cb('orders', s.docs.map(function(d){ var o = d.data(); o.id = d.id; return o; })); }, function(e){ console.error(e); }));
+      un.push(db.collection('lphones').onSnapshot(function(s){ cb('phones', s.docs.map(function(d){ var o = d.data(); o.id = d.id; return o; })); }, function(e){ console.error(e); }));
       un.push(db.collection('pdeals').onSnapshot(function(s){ var mo = {}; s.docs.forEach(function(d){ mo[d.id] = (d.data() || {}).d || {}; }); cb('pdeals', mo); }, function(e){ console.error(e); }));
       un.push(db.collection('psettings').doc('main').onSnapshot(function(d){ cb('pset', d.exists ? d.data() : {}); }, function(e){ console.error(e); }));
       un.push(db.collection('lbot').doc('state').onSnapshot(function(d){ var o = d.exists ? d.data() : {}; delete o.orders; cb('bot', o); }, function(e){ console.error(e); }));
@@ -1411,11 +1480,11 @@ function vHist(){
 function opRow(o, inCard){
   var c = byId(S.cards, o.card), adj = o.src === 'adjust';
   if (inCard === true){
-    var sub2 = (adj ? 'Корректировка' : (o.kind === 'xfer' ? (o.dir === 'in' ? 'Перевод с другой карты' : 'Перевод на другую карту') : (o.dir === 'in' ? 'Получение' : 'Отправка'))) + (o.src === 'receipt' ? ' · по квитанции' : o.src === 'okx' ? ' · ордер OKX' : '') + (o.note ? ' · ' + o.note : '');
+    var sub2 = (adj ? 'Корректировка' : (o.kind === 'xfer' ? (o.dir === 'in' ? 'Перевод с другой карты' : 'Перевод на другую карту') : (o.dir === 'in' ? 'Получение' : o.kind === 'buy' ? 'Покупка' : 'Отправка'))) + (o.src === 'receipt' ? ' · по квитанции' : o.src === 'okx' ? ' · ордер OKX' : '') + (o.note ? ' · ' + o.note : '') + (o.fee ? ' · комиссия ' + money(o.fee) : '');
     return '<button class="op" data-op="' + esc(o.id) + '"><span class="oic ' + (adj ? 'adj' : o.dir) + '">' + (adj ? ADJ : (o.dir === 'in' ? ARR_IN : ARR_OUT)) + '</span><span class="mid"><span class="t1">' + esc(dayLabel(o.date)) + '</span><span class="t2">' + esc(sub2) + '</span></span><span class="sum' + (o.dir === 'in' ? ' in' : '') + '">' + (o.amount < 0 ? '−' : '') + money(Math.abs(o.amount)) + '</span></button>';
   }
   var cls = adj ? 'adj' : o.dir, ic = adj ? ADJ : (o.dir === 'in' ? ARR_IN : ARR_OUT);
-  var sub = (adj ? 'Корректировка по банку' : (o.kind === 'xfer' ? (o.dir === 'in' ? 'Перевод с другой карты' : 'Перевод на другую карту') : (o.dir === 'in' ? 'Получение' : 'Отправка'))) + (o.src === 'receipt' ? ' · по квитанции' : o.src === 'okx' ? ' · ордер OKX' : '') + (o.note ? ' · ' + o.note : '');
+  var sub = (adj ? 'Корректировка по банку' : (o.kind === 'xfer' ? (o.dir === 'in' ? 'Перевод с другой карты' : 'Перевод на другую карту') : (o.dir === 'in' ? 'Получение' : o.kind === 'buy' ? 'Покупка' : 'Отправка'))) + (o.src === 'receipt' ? ' · по квитанции' : o.src === 'okx' ? ' · ордер OKX' : '') + (o.note ? ' · ' + o.note : '') + (o.fee ? ' · комиссия ' + money(o.fee) : '');
   return '<button class="op" data-op="' + esc(o.id) + '"><span class="oic ' + cls + '">' + ic + '</span><span class="mid"><span class="t1">' + esc(c ? cardLabel(c) : 'Удалённая карта') + '</span><span class="t2">' + esc(sub) + '</span></span><span class="sum' + (o.dir === 'in' ? ' in' : '') + '">' + (o.amount < 0 ? '−' : '') + money(Math.abs(o.amount)) + '</span></button>';
 }
 
@@ -1436,6 +1505,8 @@ function vSettings(){
   h += '<section class="card"><h2>Автоматика</h2><button class="togrow" data-act="auto" type="button"><span>Записывать квитанции сразу<span class="cnt">Если карта и сумма найдены, запись создаётся без вопросов, с кнопкой «Отменить»</span></span><span class="switch" role="switch" aria-checked="' + (tg.auto !== false) + '"></span></button>' +
     okxRowHtml() +
     '<div class="kv" style="margin-top:10px"><span>Telegram</span><b>' + (tgOn ? 'подключён' : 'не подключён') + '</b></div><div class="stack" style="margin-top:8px"><button class="btn ghost sm" data-act="tg">' + (tgOn ? 'Настроить уведомления' : 'Подключить уведомления') + '</button></div></section>';
+  h += feesCardHtml();
+  h += autoCardHtml();
   h += '<section class="card"><h2>Квитанции</h2><p class="note" style="margin:0">Скрин читается прямо на телефоне или ноутбуке, никуда не отправляется. В первый раз приложение скачает модуль распознавания (около 10 МБ), дальше работает быстрее.</p><p class="note">На ноутбуке скрин можно вставить сочетанием <b>Ctrl+V</b> или перетащить в окно.</p></section>';
   h += '<section class="card"><h2>База</h2><div class="kv"><span>Карт</span><b>' + S.cards.length + '</b></div><div class="kv"><span>Записей за год</span><b>' + S.ops.length + '</b></div>';
   if (DEMO) h += '<p class="note">Демо-режим: данные с примерами хранятся только на этом устройстве.</p><div class="stack" style="margin-top:10px"><button class="btn ghost sm" data-act="reset">Вернуть примеры</button></div></section>';
@@ -1475,18 +1546,18 @@ function colorsHtml(){
 }
 
 /* ============ рендер ============ */
-var TITLES = {cards:'Карты', hist:'История', settings:'Настройки', profit:'Профит'};
+var TITLES = {cards:'Карты', hist:'История', settings:'Настройки', profit:'Профит', warm:'Прогрев'};
 function render(enter){
   if (!S.ready.c || !S.ready.o) return;
   var v = $('#view'), focusQ = document.activeElement && document.activeElement.id === 'q', pos = focusQ ? document.activeElement.selectionStart : 0;
   v.className = 'view v-' + S.view + (enter && !REDUCED ? ' enter' : '');
-  v.innerHTML = S.view === 'hist' ? vHist() : S.view === 'settings' ? vSettings() : S.view === 'profit' ? PROF.view() : vCards();
+  v.innerHTML = S.view === 'hist' ? vHist() : S.view === 'settings' ? vSettings() : S.view === 'profit' ? PROF.view() : S.view === 'warm' ? vWarm() : vCards();
   Array.prototype.forEach.call(v.children, function(c, i){ c.style.setProperty('--i', Math.min(i, 6)); });
   animateBars(v);
   if (focusQ){ var q = $('#q'); if (q){ q.focus(); try { q.setSelectionRange(pos, pos); } catch(e){} } }
   $('#topTitle').textContent = S.view === 'cards' && S.person ? S.person : TITLES[S.view];
   $('#topSub').textContent = S.view === 'cards' && S.person ? (function(){ var n = S.cards.filter(function(c){ return holderOf(c) === S.person; }).length; return n + ' ' + plural(n, 'карта', 'карты', 'карт'); })() : S.view === 'cards' ? cap(new Date().toLocaleDateString('ru-RU', {weekday:'long', day:'numeric', month:'long'})) : '';
-  var ft = $('#fabTxt'); if (ft) ft.textContent = S.view === 'profit' ? 'Добавить сделку' : 'Добавить перевод';
+  var ft = $('#fabTxt'); if (ft) ft.textContent = S.view === 'profit' ? 'Добавить сделку' : S.view === 'warm' ? 'Добавить покупку' : 'Добавить перевод';
   document.querySelectorAll('[data-tab]').forEach(function(b){ if (b.getAttribute('data-tab') === S.view) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
 }
 var personPushed = false;
@@ -1639,15 +1710,18 @@ function commitOp(spec){
   if (spec.dir === 'xfer'){
     if (spec.ids){
       var a = byId(S.ops, spec.ids[0]), b = byId(S.ops, spec.ids[1]);
-      [a, b].forEach(function(o){ if (!o) return; store.patch('lops', o.id, {amount:spec.amount, date:spec.date, note:notes, lim:spec.lim, card:o.dir === 'out' ? spec.card : spec.to}).catch(dbErr); });
+      [a, b].forEach(function(o){ if (!o) return; var pt = {amount:spec.amount, date:spec.date, note:notes, lim:spec.lim, card:o.dir === 'out' ? spec.card : spec.to}; if (o.dir === 'out') pt.fee = feeFor(spec.card, spec.amount); store.patch('lops', o.id, pt).catch(dbErr); });
       return [];
     }
     var ia = uid(), ib = uid();
-    store.put('lops', ia, {card:spec.card, dir:'out', amount:spec.amount, date:spec.date, note:notes, src:spec.src, kind:'xfer', pair:ib, lim:spec.lim, ts:now}).catch(dbErr);
+    var xf = {card:spec.card, dir:'out', amount:spec.amount, date:spec.date, note:notes, src:spec.src, kind:'xfer', pair:ib, lim:spec.lim, ts:now}, fx = feeFor(spec.card, spec.amount); if (fx) xf.fee = fx;
+    store.put('lops', ia, xf).catch(dbErr);
     store.put('lops', ib, {card:spec.to, dir:'in', amount:spec.amount, date:spec.date, note:notes, src:spec.src, kind:'xfer', pair:ia, lim:spec.lim, ts:now}).catch(dbErr);
     return [ia, ib];
   }
   var d = {card:spec.card, dir:spec.dir, amount:spec.amount, date:spec.date, note:notes, src:spec.src};
+  if (spec.src === 'buy'){ d.kind = 'buy'; d.lim = false; }                       // покупка для прогрева: с баланса, но не в лимит
+  else if (spec.dir === 'out' && spec.src !== 'adjust') d.fee = feeFor(spec.card, spec.amount);
   if (spec.id){ store.patch('lops', spec.id, d).catch(dbErr); return []; }
   var id = uid(); d.ts = now; store.put('lops', id, d).catch(dbErr); return [id];
 }
@@ -2154,6 +2228,141 @@ function attentionHtml(){
     return '<button class="ao" data-ord="' + esc(o.id) + '"><span class="oic">' + (o.side === 'sell' ? ARR_IN : ARR_OUT) + '</span><span class="mid"><span class="t1">' + esc(orderTitle(o)) + '</span><span class="t2">' + esc((t ? shortDate(dstr(t)) + ' ' + pad2(t.getHours()) + ':' + pad2(t.getMinutes()) + ' · ' : '') + (o.needWhy || 'Выбери карту')) + '</span></span><svg class="chev" style="width:18px;height:18px;color:var(--muted)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></button>';
   }).join('') + '</section>';
 }
+/* ============ ПРОГРЕВ КАРТ ============
+   Карта тёплая, если сумма покупок за последние N дней (30) ≥ порога (200 ₴).
+   Покупки — записи с src:'buy': приходят с телефонов (уведомления банков / Apple Pay) через сервер или вручную. */
+function warmCfg(){ var w = (S.set || {}).warm || {}; return {sum:w.sum || 20000, days:w.days || 30}; }
+function dayShift(ds, n){ var d = toDate(ds); d.setDate(d.getDate() + n); return dstr(d); }
+function warmInfo(c){
+  var W = warmCfg(), today = dstr(new Date()), from = dayShift(today, -(W.days - 1));
+  var buys = S.ops.filter(function(o){ return o.card === c.id && o.kind === 'buy' && o.date && o.date >= from && o.date <= today; }).sort(function(a, b){ return a.date < b.date ? 1 : a.date > b.date ? -1 : (b.ts || 0) - (a.ts || 0); });
+  var tot = 0, until = null, acc = 0;
+  buys.forEach(function(o){ tot += o.amount; });
+  for (var i = 0; i < buys.length; i++){ acc += buys[i].amount; if (acc >= W.sum){ until = dayShift(buys[i].date, W.days); break; } }   // остынет, когда выпадет эта покупка
+  var last = S.ops.filter(function(o){ return o.card === c.id && o.kind === 'buy'; }).sort(function(a, b){ return a.date < b.date ? 1 : -1; })[0] || null;
+  var daysLeft = until ? Math.round((toDate(until) - toDate(today)) / 86400000) : 0;
+  return {warm:tot >= W.sum, sum:tot, need:Math.max(0, W.sum - tot), until:until, daysLeft:daysLeft, last:last, n:buys.length};
+}
+function phoneAgo(ts){ var m = Math.round((Date.now() - ts) / 60000); return m < 1 ? 'только что' : m < 60 ? m + ' мин назад' : m < 1440 ? Math.round(m / 60) + ' ч назад' : Math.round(m / 1440) + ' дн назад'; }
+function phonesHtml(){
+  var ph = (S.phones || []).filter(function(x){ return x && typeof x.level === 'number'; });
+  if (!ph.length) return '';
+  return '<section class="card"><h2>Телефоны</h2>' + ph.map(function(x){
+    var stale = Date.now() - (x.at || 0) > 40 * 60000, low = x.level <= 20 && !x.charging;
+    var col = stale ? 'var(--muted)' : low ? 'var(--danger)' : x.level <= 40 && !x.charging ? 'var(--warn)' : 'var(--ok)';
+    return '<div class="kv"><span>' + esc(x.name || x.id) + '</span><b style="color:' + col + '">' + (x.charging ? '⚡ ' : '🔋 ') + x.level + '%<span style="color:var(--muted);font-weight:500"> · ' + (stale ? 'нет связи ' : '') + phoneAgo(x.at || 0) + '</span></b></div>';
+  }).join('') + '</section>';
+}
+function vWarm(){
+  var W = warmCfg(), act = S.cards.filter(function(c){ return !c.off; }), infos = {};
+  act.forEach(function(c){ infos[c.id] = warmInfo(c); });
+  var warmN = act.filter(function(c){ return infos[c.id].warm; }).length, soon = act.filter(function(c){ var w = infos[c.id]; return w.warm && w.daysLeft <= 3; }).length;
+  var h = '<section class="hero"><div><div class="lbl">Прогрето карт</div><div class="big">' + warmN + ' из ' + act.length + '</div></div><div class="hmain"><div class="hsub" style="margin-top:0">Тёплая — покупки на ' + money(W.sum) + ' за ' + W.days + ' дней' + (soon ? ' · скоро остынут: ' + soon : '') + '</div></div></section>';
+  h += phonesHtml();
+  holders().forEach(function(hd){
+    var cs = act.filter(function(c){ return holderOf(c) === hd[0]; });
+    if (!cs.length) return;
+    cs.sort(function(a, b){ var x = infos[a.id], y = infos[b.id]; return (x.warm === y.warm ? 0 : x.warm ? 1 : -1) || x.daysLeft - y.daysLeft; });
+    h += '<div class="sec"><span>' + esc(hd[0]) + '</span><span>' + cs.filter(function(c){ return infos[c.id].warm; }).length + '/' + cs.length + '</span></div><section class="card" style="padding-block:6px">' + cs.map(function(c){
+      var w = infos[c.id], col = !w.warm ? 'var(--info)' : w.daysLeft <= 3 ? 'var(--warn)' : 'var(--ok)';
+      var st = !w.warm ? '❄️ холодная' : '🔥 тёплая до ' + shortDate(w.until) + (w.daysLeft <= 3 ? ' · ' + w.daysLeft + ' ' + plural(w.daysLeft, 'день', 'дня', 'дней') : '');
+      return '<button class="wm" data-buy="' + esc(c.id) + '" type="button"><span class="mid"><span class="t1">' + bankBadge(c.bank, 'sm') + ' ••' + esc(last4(c)) + '</span><span class="t2">' + (w.sum ? 'за ' + W.days + ' дн: ' + money(w.sum) : 'покупок за ' + W.days + ' дн нет') + (w.last ? ' · последняя ' + shortDate(w.last.date) : '') + '</span></span><span class="rt"><b style="color:' + col + '">' + st + '</b>' + (!w.warm ? '<small>нужно ещё ' + money(w.need) + '</small>' : '') + '</span></button>';
+    }).join('') + '</section>';
+  });
+  if (!act.length) h += '<section class="card"><div class="empty">Добавь карты, и здесь появится их прогрев.</div></section>';
+  var recent = S.ops.filter(function(o){ return o.kind === 'buy'; }).sort(function(a, b){ return a.date < b.date ? 1 : a.date > b.date ? -1 : (b.ts || 0) - (a.ts || 0); }).slice(0, 15);
+  h += '<div class="sec"><span>Последние покупки</span><span></span></div><section class="card" style="padding-block:6px">' + (recent.length ? recent.map(function(o){ return opRow(o); }).join('') : '<div class="empty">Пока пусто. Покупки появятся сами с телефонов, или добавь кнопкой «+».</div>') + '</section>';
+  h += '<p class="note">Нажми на карту, чтобы вручную записать покупку на неё. Покупки списываются с баланса карты, но не идут в лимит отправки.</p>';
+  return h;
+}
+var BY = null;
+function openBuy(cardId){
+  BY = {card:cardId || null};
+  var cs = S.cards.filter(function(c){ return !c.off; }).sort(function(a, b){ return (warmInfo(a).warm ? 1 : 0) - (warmInfo(b).warm ? 1 : 0); });
+  $('#byCards').innerHTML = cs.map(function(c){ var w = warmInfo(c); return '<button type="button" class="oc" data-by="' + esc(c.id) + '"><span class="mid"><span class="t1">' + bankBadge(c.bank, 'sm') + esc(c.holder || '') + ' ••' + esc(last4(c)) + '</span><span class="t2">' + (w.warm ? '🔥 тёплая до ' + shortDate(w.until) : '❄️ нужно ещё ' + money(w.need)) + '</span></span></button>'; }).join('');
+  pressSet($('#byCards'), 'data-by', BY.card);
+  $('#byAmt').value = ''; $('#byNote').value = ''; $('#byDate').value = dstr(new Date());
+  openSheet('sBuy');
+}
+$('#byCards').addEventListener('click', function(e){ var b = e.target.closest('[data-by]'); if (b){ BY.card = b.getAttribute('data-by'); pressSet($('#byCards'), 'data-by', BY.card); } });
+$('#bySave').addEventListener('click', function(){
+  if (!BY.card){ toast('Выбери карту'); return; }
+  var a = parseMoney($('#byAmt').value); if (!(a > 0)){ shake($('#byAmt').parentNode); toast('Впиши сумму'); return; }
+  var ds = $('#byDate').value || dstr(new Date()), nt = $('#byNote').value.trim();
+  commitOp({dir:'out', card:BY.card, amount:a, date:ds, note:nt, src:'buy'});
+  vib(12); toast('Покупка записана'); closeSheet(); render();
+});
+/* комиссии */
+function feesCardHtml(){
+  var fz = (S.set || {}).bankFees || {}, rows = bankNames().filter(function(b){ var f = fz[bankKey(b)]; return f && (f.pct || f.min || f.fix); });
+  return '<section class="card"><h2>Комиссии банков</h2>' + (rows.length ? rows.map(function(b){ var f = fz[bankKey(b)]; return '<div class="kv"><span>' + bankBadge(b, 'sm') + '</span><b>' + feeLabel(f) + '</b></div>'; }).join('') : '<p class="note" style="margin:0">Комиссий нет. Если банк берёт за перевод, укажи тариф, и комиссия будет списываться с баланса карты и вычитаться из профита.</p>') +
+    '<div class="stack" style="margin-top:8px"><button class="btn ghost sm" data-act="fees">Настроить комиссии</button></div></section>';
+}
+function feeLabel(f){ var p = []; if (f.pct) p.push(String(f.pct).replace('.', ',') + '%'); if (f.min) p.push('мин ' + money(f.min)); if (f.fix) p.push('+ ' + money(f.fix)); return p.join(' · ') || '—'; }
+function openFees(){
+  var fz = (S.set || {}).bankFees || {}, bn = bankNames();
+  $('#fzList').innerHTML = bn.length ? bn.map(function(b){ var k = bankKey(b), f = fz[k] || {};
+    return '<div class="prow" data-fz="' + esc(k) + '"><div>' + bankBadge(b) + '</div><div class="grid3"><label class="field"><input data-f="pct" type="text" inputmode="decimal" placeholder="% 0" value="' + (f.pct ? String(f.pct).replace('.', ',') : '') + '"></label><label class="field"><input data-f="min" type="text" inputmode="decimal" placeholder="мин ₴" value="' + (f.min ? kopIn(f.min) : '') + '"></label><label class="field"><input data-f="fix" type="text" inputmode="decimal" placeholder="фикс ₴" value="' + (f.fix ? kopIn(f.fix) : '') + '"></label></div></div>'; }).join('')
+    : '<div class="empty">Сначала добавь карты.</div>';
+  openSheet('sFees');
+}
+$('#fzSave').addEventListener('click', function(){
+  var out = {}, bad = false;
+  document.querySelectorAll('#fzList [data-fz]').forEach(function(r){
+    var g = function(k){ var v = r.querySelector('[data-f="' + k + '"]').value.trim(); return v ? parseFloat(v.replace(',', '.').replace(/\s/g, '')) : 0; };
+    var pct = g('pct'), mn = g('min'), fx = g('fix');
+    if ([pct, mn, fx].some(function(x){ return isNaN(x) || x < 0; }) || pct > 10){ bad = true; shake(r); return; }
+    out[r.getAttribute('data-fz')] = pct || mn || fx ? {pct:pct, min:Math.round(mn * 100), fix:Math.round(fx * 100)} : null;
+  });
+  if (bad){ toast('Проверь цифры: процент от 0 до 10'); return; }
+  var all = Object.assign({}, (S.set || {}).bankFees || {}, out);
+  S.set = Object.assign({}, S.set, {bankFees:all}); store.setSettings({bankFees:all}).catch(dbErr);
+  toast('Комиссии сохранены. Считаются для новых записей.', 3000); closeSheet(); render();
+});
+
+/* ============ автоторговля ============ */
+function autoCardHtml(){
+  var a = (S.set || {}).auto || {}, t = (S.bot || {}).trade || {};
+  var st = !a.on ? 'выключена' : (t.status || 'ждёт первого запуска сервера');
+  var h = '<section class="card"><h2>Автоторговля OKX' + (a.on && a.dry !== false ? '<span style="color:var(--warn);letter-spacing:0;text-transform:none">тестовый режим</span>' : '') + '</h2>' +
+    '<div class="kv"><span>Сейчас</span><b style="text-align:right;min-width:0">' + esc(st) + '</b></div>' +
+    (a.on ? '<div class="kv"><span>Смена</span><b>' + esc((a.start || '07:00') + '–' + (a.end || '23:00')) + '</b></div><div class="kv"><span>Правило</span><b style="text-align:right">' + (+a.pos || 3) + '-е место · зазор ' + String(a.gap || 0.8).replace('.', ',') + ' ₴ · от ' + (a.minOrder || 4000) + ' ₴</b></div>' : '') +
+    (t.last ? '<div class="kv"><span>Последнее действие</span><b style="text-align:right;min-width:0;font-weight:500">' + esc(t.last) + (t.lastAt ? ' · ' + timeAgo(t.lastAt) : '') + '</b></div>' : '') +
+    (t.err ? '<p class="note" style="color:var(--danger)">' + esc(t.err) + '</p>' : '') +
+    '<p class="note">Для работы нужен API-ключ OKX с правом «Торговля» (Trade). Начни с тестового режима: сервер будет только писать в Telegram, что сделал бы.</p>' +
+    '<div class="stack" style="margin-top:8px"><button class="btn ghost sm" data-act="autocfg">Настроить</button></div></section>';
+  return h;
+}
+function timeAgo(ts){ var m = Math.round((Date.now() - ts) / 60000); return m < 1 ? 'только что' : m < 60 ? m + ' мин назад' : Math.round(m / 60) + ' ч назад'; }
+var AU = null;
+function openAuto(){
+  var a = Object.assign({on:false, dry:true, start:'07:00', end:'23:00', days:[1,2,3,4,5,6,7], pos:3, quota:100, gap:0.8, minOrder:4000, jump:1, tgEach:false}, (S.set || {}).auto || {});
+  AU = {on:!!a.on, dry:a.dry !== false, tgEach:!!a.tgEach, days:(a.days || []).slice()};
+  $('#auStart').value = a.start; $('#auEnd').value = a.end; $('#auPos').value = a.pos; $('#auQuota').value = String(a.quota).replace('.', ',');
+  $('#auGap').value = String(a.gap).replace('.', ','); $('#auMin').value = a.minOrder; $('#auJump').value = String(a.jump).replace('.', ',');
+  syncAuto(); openSheet('sAuto');
+}
+function syncAuto(){
+  $('#auOnSw').setAttribute('aria-checked', String(AU.on)); $('#auDrySw').setAttribute('aria-checked', String(AU.dry)); $('#auTgSw').setAttribute('aria-checked', String(AU.tgEach));
+  $('#auDays').querySelectorAll('[data-dw]').forEach(function(b){ b.setAttribute('aria-pressed', String(AU.days.indexOf(+b.getAttribute('data-dw')) > -1)); });
+}
+$('#auOnT').addEventListener('click', function(){ AU.on = !AU.on; syncAuto(); });
+$('#auDryT').addEventListener('click', function(){ AU.dry = !AU.dry; syncAuto(); });
+$('#auTgT').addEventListener('click', function(){ AU.tgEach = !AU.tgEach; syncAuto(); });
+$('#auDays').addEventListener('click', function(e){ var b = e.target.closest('[data-dw]'); if (!b) return; var d = +b.getAttribute('data-dw'), i = AU.days.indexOf(d); if (i > -1) AU.days.splice(i, 1); else AU.days.push(d); AU.days.sort(); syncAuto(); });
+$('#auSave').addEventListener('click', function(){
+  var n = function(id){ return parseFloat(String($(id).value).replace(',', '.').replace(/\s/g, '')); };
+  var a = {on:AU.on, dry:AU.dry, tgEach:AU.tgEach, days:AU.days, start:$('#auStart').value || '07:00', end:$('#auEnd').value || '23:00', pos:Math.round(n('#auPos')), quota:n('#auQuota'), gap:n('#auGap'), minOrder:Math.round(n('#auMin')), jump:n('#auJump')};
+  if (!(a.pos >= 1 && a.pos <= 10)){ shake($('#auPos').parentNode); toast('Место — от 1 до 10'); return; }
+  if (!(a.quota > 0)){ shake($('#auQuota').parentNode); toast('Фильтр суммы — число USDT'); return; }
+  if (!(a.gap >= 0.5)){ shake($('#auGap').parentNode); toast('Зазор не меньше 0,50 ₴ — защита от слишком узкого спреда'); return; }
+  if (!(a.minOrder >= 100)){ shake($('#auMin').parentNode); toast('Минимальный ордер — от 100 ₴'); return; }
+  if (!(a.jump > 0)) a.jump = 1;
+  if (!a.days.length){ toast('Выбери хотя бы один день'); return; }
+  if (a.start === a.end){ toast('Начало и конец смены совпадают'); return; }
+  S.set = Object.assign({}, S.set, {auto:a}); store.setSettings({auto:a}).catch(dbErr);
+  toast(a.on ? (a.dry ? 'Включено в тестовом режиме' : 'Автоторговля включена') : 'Автоторговля выключена', 3000); closeSheet(); render();
+});
 function okxRowHtml(){
   var b = S.bot || {}, on = okxOn(), age = b.lastRun ? Math.round((Date.now() - b.lastRun) / 60000) : null;
   var col = !on ? 'var(--muted)' : (age !== null && age <= 3 && !(b.lastErrorAt && b.lastErrorAt > (b.lastRun || 0))) ? 'var(--ok)' : 'var(--warn)';
@@ -2204,7 +2413,11 @@ function linkToOrder(o, ids, sp, how, url){
   var rc = (o.rcDone || []).slice(); if (url) rc.push(url);
   var patch = {rcSigs:o.rcSigs || [], partSum:(o.partSum || 0) + (sp ? sp.amount : 0), opIds:(o.opIds || []).concat(ids || []), rcDone:rc, card:sp ? sp.card : (o.card || null), doneAt:Date.now(), doneHow:how, done:true, need:false};
   Object.assign(o, patch);
-  var left = ordLeft(o), full = left <= ordTol(o);
+  var left = ordLeft(o), full = left <= ordTol(o) && (o.opIds || []).length;
+  if (full && ordBad(o).length){
+    // сумма сошлась: неразобранные картинки были лишними скринами — не держим ордер во «Внимании»
+    o.rcDone = patch.rcDone = rc.concat(ordBad(o)); o.need = patch.need = false; o.done = patch.done = true; o.needWhy = patch.needWhy = '';
+  }
   if (ordBad(o).length){ patch.done = false; patch.need = true; o.done = false; o.need = true; }   // есть квитанция, которую надо проверить вручную
   else if (!full && how !== 'auto'){ patch.done = false; patch.need = true; patch.needWhy = shortWhy(o); o.done = false; o.need = true; o.needWhy = patch.needWhy; }
   store.patch('lorders', o.id, patch).catch(dbErr);
@@ -2242,6 +2455,12 @@ function processOrders(){
       toast('Ордер отменён, запись убрана');
     }
   });
+  // ордер уже оплачен по квитанциям, а висит во «Внимании» из-за лишнего скрина — убираем
+  S.orders.forEach(function(o){
+    if (!o.need || o.done || !(o.opIds || []).length || !Array.isArray(o.rcDone) || ordLeft(o) > ordTol(o)) return;
+    var p = {need:false, done:true, needWhy:'', rcDone:o.rcDone.concat(ordBad(o))}; Object.assign(o, p);
+    store.patch('lorders', o.id, p).catch(dbErr);
+  });
   // ордер завершён, все квитанции записаны, но их сумма меньше ордера — показываем, сколько не хватает
   S.orders.forEach(function(o){
     if (o.status !== 'completed' || !o.done || !Array.isArray(o.rcDone) || !o.rcDone.length || o.shortNoted || ordPending(o).length) return;
@@ -2277,6 +2496,7 @@ function processOrders(){
     if (!o.receipts || !o.receipts.length) return markNeed(o, 'OKX не отдал квитанцию из чата — поделись ею из банка', o.noReceipt);
     var pend = ordPending(o); if (!pend.length) return;
     var rc = pend[0].url; curRc = rc;
+    if ((o.opIds || []).length && ordLeft(o) <= ordTol(o)){ linkToOrder(o, [], null, 'auto', rc); return; }   // уже оплачен — это лишний скрин
     return fetch(okxFileUrl(rc)).then(function(r){ if (!r.ok) throw new Error('файл ' + r.status); return r.blob(); })
       .then(function(blob){
         if (/pdf/.test(blob.type)) return readPdf(new File([blob], 'r.pdf', {type:'application/pdf'})).then(function(x){ return x.text; });
@@ -2496,8 +2716,9 @@ document.addEventListener('click', function(e){
   if (cp && !cp.closest('.sheet')){ e.stopPropagation(); return doCopy(cp); }
   var eb = e.target.closest('[data-bal]');
   if (eb && !eb.closest('.sheet')){ var bc = byId(S.cards, eb.getAttribute('data-bal')); if (bc) editBal(bc); return; }
-  var t = e.target.closest('[data-tab],[data-card],[data-op],[data-hold],[data-act],[data-sort],[data-m],[data-hd],[data-th],[data-sh],[data-person],[data-ord],[data-fop],[data-bres]');
+  var t = e.target.closest('[data-tab],[data-card],[data-op],[data-hold],[data-act],[data-sort],[data-m],[data-hd],[data-th],[data-sh],[data-person],[data-ord],[data-fop],[data-bres],[data-buy]');
   if (!t || t.closest('.sheet')) return;
+  if (t.hasAttribute('data-buy')) return openBuy(t.getAttribute('data-buy'));
   if (t.hasAttribute('data-fop')){ var fp = byId(fops(), t.getAttribute('data-fop')); if (fp) openFop(fp); return; }
   if (t.hasAttribute('data-bres')){ var all = Object.assign({}, (S.set || {}).bankCol || {}); all[t.getAttribute('data-bres')] = null; delete BF_TOUCHED[t.getAttribute('data-bres')]; S.set = Object.assign({}, S.set, {bankCol:all}); store.setSettings({bankCol:all}).catch(dbErr); return render(); }
   if (t.hasAttribute('data-tab')) return go(t.getAttribute('data-tab'));
@@ -2514,6 +2735,8 @@ document.addEventListener('click', function(e){
   var a = t.getAttribute('data-act');
   if (a === 'newcard') return openCard(null);
   if (a === 'newfop') return openFopEd(null);
+  if (a === 'autocfg') return openAuto();
+  if (a === 'fees') return openFees();
   if (a === 'editpers') return openPers(S.person);
   if (a === 'cureset'){ PR.custom = null; savePrefs(); applyTheme(); return render(); }
   if (a === 'screset'){ PR.scale = null; savePrefs(); return render(); }
@@ -2551,6 +2774,7 @@ document.addEventListener('change', function(e){
 });
 $('#fab').addEventListener('click', function(){
   if (S.view === 'profit') return PROF.openDeal(null);
+  if (S.view === 'warm') return openBuy(null);
   if (!S.cards.length){ toast('Сначала добавь карту'); openCard(null); return; }
   openOp(null);
   // в меню человека карты этого человека уже выбраны фильтром
@@ -2624,6 +2848,7 @@ function sumDays(list){
     if (g.sQ > 0 && (!r.worst || g.profit < r.worst.profit)) r.worst = g;
     if (g.over) r.over++; if (g.noCost) r.noCost++;
   });
+  r.fee = 0; list.forEach(function(g){ r.fee += g.fee || 0; });
   r.avgBuy = r.bQ > 0 ? r.bU / r.bQ : null;
   r.avgSell = r.sQ > 0 ? r.sU / r.sQ : null;
   r.spread = r.sQ > 0 ? r.profit / r.sQ : null;               // заработок на 1 проданный USDT
@@ -2660,9 +2885,17 @@ function allDeals(){
 function findDeal(id){ for (var m in PS.months){ var d = PS.months[m] || {}; if (d[id]){ var o = Object.assign({}, d[id]); o.id = id; o.m = m; return o; } } return null; }
 function startBal(){ var s = PS.set.start; return s && s.q > 0 && s.avg > 0 ? {q:s.q, avg:s.avg} : null; }
 function calc(){
-  var key = JSON.stringify([Object.keys(PS.months).map(function(m){ return m + ':' + Object.keys(PS.months[m] || {}).length; }), PS.ver || 0, PS.set.start || null]);
+  // комиссии банков (записи «Лимитов» с полем fee) вычитаются из профита своего дня
+  var fees = {}, fsum = 0;
+  (S.ops || []).forEach(function(o){ if (o.fee > 0 && o.date){ fees[o.date] = (fees[o.date] || 0) + o.fee; fsum += o.fee; } });
+  var key = JSON.stringify([Object.keys(PS.months).map(function(m){ return m + ':' + Object.keys(PS.months[m] || {}).length; }), PS.ver || 0, PS.set.start || null, fsum, Object.keys(fees).length]);
   if (CALC && key === CALC_KEY) return CALC;
-  CALC = computeProfit(allDeals(), startBal()); CALC_KEY = key; return CALC;
+  CALC = computeProfit(allDeals(), startBal());
+  CALC.days.forEach(function(g){ g.fee = fees[g.day] || 0; g.gross = g.profit; g.profit = g.profit - g.fee; });
+  // день с комиссиями, но без сделок — тоже минус
+  Object.keys(fees).forEach(function(d){ if (!CALC.byDay[d]){ var g = emptyDay(d); g.fee = fees[d]; g.gross = 0; g.profit = -fees[d]; CALC.byDay[d] = g; CALC.days.push(g); } });
+  CALC.days.sort(function(a, b){ return a.day < b.day ? -1 : a.day > b.day ? 1 : 0; });
+  CALC_KEY = key; return CALC;
 }
 function bump(){ PS.ver = (PS.ver || 0) + 1; }
 function daysOfMonth(m){ var c = calc(); return c.days.filter(function(g){ return g.day.slice(0, 7) === m; }); }
@@ -2770,7 +3003,7 @@ function vHome(){
   var usd = g.avgSell ? g.profit / g.avgSell : 0;
   h += '<section class="hero"><div><div class="lbl">Профит сегодня</div><div class="big">' + signed(g.profit) + '</div><div class="usd">' + (g.sQ ? '≈ ' + usdt(usd) : 'Продаж сегодня ещё не было') + '</div></div>' +
     '<div class="hmain">' + (dg ? goalBar(g.profit, dg, 'gd') + '<div class="hsub" style="margin-top:0">' + (g.profit >= dg ? 'Цель дня выполнена: ' + moneyS(dg) : 'Цель дня ' + moneyS(dg) + ' · осталось ' + moneyS(dg - g.profit)) + (G.day ? '' : ' (из цели месяца)') + '</div>' : '<button class="hsub" data-pact="goals" style="text-align:left;text-decoration:underline;text-underline-offset:3px;margin:0">Поставить цель на день</button>') +
-    '<div class="hrow3"><div><small>Спред</small><b>' + (g.spread !== null ? price(g.spread) + ' ₴' : '—') + '</b></div><div><small>Спред %</small><b>' + pct(g.spreadPct) + '</b></div><div><small>Продано</small><b>' + usdtS(g.sQ) + '</b></div><div><small>Ордеров</small><b>' + g.n + '</b></div></div></div></section>';
+    (g.fee ? '<div class="hsub" style="margin-top:0">Комиссии банков сегодня −' + moneyS(g.fee) + ' (уже вычтены)</div>' : '') + '<div class="hrow3"><div><small>Спред</small><b>' + (g.spread !== null ? price(g.spread) + ' ₴' : '—') + '</b></div><div><small>Спред %</small><b>' + pct(g.spreadPct) + '</b></div><div><small>Продано</small><b>' + usdtS(g.sQ) + '</b></div><div><small>Ордеров</small><b>' + g.n + '</b></div></div></div></section>';
   h += warnHtml(daysOfMonth(m).concat(c.byDay[td] ? [] : []));
   // месяц
   var mf = monthFracK(m), left = daysIn(m) - +td.slice(8, 10) + 1;
@@ -2874,6 +3107,7 @@ function vStats(){
     '<div class="kv"><span>Средняя продажа</span><b>' + price(ms.avgSell) + ' ₴</b></div>' +
     '<div class="kv"><span>Спред на 1 USDT</span><b class="' + pnlCls(ms.spread || 0) + '">' + (ms.spread !== null ? price(ms.spread) + ' ₴' : '—') + '</b></div>' +
     '<div class="kv"><span>Спред в %</span><b>' + pct(ms.spreadPct, 3) + '</b></div>' +
+    (ms.fee ? '<div class="kv"><span>Комиссии банков</span><b class="neg">−' + moneyS(ms.fee) + '</b></div>' : '') +
     '<p class="note">Спред здесь — сколько ты в среднем заработал на каждом проданном USDT, с учётом средней цены остатка. Средняя покупка — только покупки этого месяца.</p></section>';
   // оборот
   var n = 0, nb = 0, ns = 0; days.forEach(function(g){ nb += g.buys.length; ns += g.sells.length; }); n = nb + ns;
@@ -3158,6 +3392,7 @@ function onData(c, list){
   if (c === 'set'){ S.set = list || {}; if (S.ready.c && S.ready.o && !(document.activeElement && document.activeElement.type === 'color')) queueRender(); setTimeout(processOrders, 0); return; }
   if (c === 'orders'){ S.orders = (list || []).filter(function(o){ return o && o.orderId; }); queueRender(); setTimeout(processOrders, 0); return; }
   if (c === 'pdeals' || c === 'pset'){ PROF.onData(c, list); return; }
+  if (c === 'phones'){ S.phones = list || []; if (S.view === 'warm' && S.ready.c && S.ready.o) queueRender(); return; }
   if (c === 'bot'){ S.bot = list || {}; if (S.view === 'settings') queueRender(); return; }
   if (c === 'cards'){ S.cards = list.filter(function(k){ return k && typeof k === 'object'; }).sort(function(a, b){ return (a.ts || 0) - (b.ts || 0); }); S.ready.c = true; }
   else { S.ops = list.filter(function(o){ return o && typeof o.amount === 'number' && o.date && o.card; }); S.ready.o = true; }
