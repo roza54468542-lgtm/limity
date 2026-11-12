@@ -846,6 +846,8 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
   <label class="field"><input id="oNote" type="text" maxlength="60" placeholder="Комментарий (необязательно)" autocomplete="off"></label>
   <button class="btn" id="oSave" type="button">Сохранить</button>
   <button class="btn ghost sm" id="oSkip" type="button" hidden>Пропустить эту квитанцию</button>
+  <button class="btn ghost sm" id="oBez" type="button" hidden>Безкарт — мимо моих карт</button>
+  <p class="note" id="oBezN" hidden style="margin:-4px 0 0"></p>
   <button class="btn ghost sm" id="oOrdSkip" type="button" hidden>Не учитывать этот ордер</button>
   <button class="btn danger" id="oDel" type="button" hidden>Удалить</button>
 </section>
@@ -1553,8 +1555,9 @@ function vHist(){
   var m = S.month, dir = S.histDir;
   var list = S.ops.filter(function(o){ return o.date && o.date.slice(0,7) === m && (dir === 'all' || o.dir === dir); }).sort(function(a, b){ return b.date.localeCompare(a.date) || (b.ts || 0) - (a.ts || 0); });
   var h = '<div class="mswitch"><button class="iconbtn" data-m="-1" aria-label="Предыдущий месяц">' + IC_L + '</button><b>' + monthLabel(m) + '</b><button class="iconbtn" data-m="1" aria-label="Следующий месяц"' + (m >= curMonth() ? ' disabled' : '') + '>' + IC_R + '</button></div>';
-  var opts = [['all','Все'],['out','Отправки'],['in','Получения']], ix = 0; opts.forEach(function(o, i){ if (o[0] === dir) ix = i; });
-  h += '<div class="seg" style="--n:3"><span class="ind" style="--idx:' + ix + '"></span>' + opts.map(function(o){ return '<button data-hd="' + o[0] + '" aria-pressed="' + (o[0] === dir) + '">' + o[1] + '</button>'; }).join('') + '</div>';
+  var opts = [['all','Все'],['out','Отправки'],['in','Получения'],['bez','Безкарт']], ix = 0; opts.forEach(function(o, i){ if (o[0] === dir) ix = i; });
+  h += '<div class="seg" style="--n:4"><span class="ind" style="--idx:' + ix + '"></span>' + opts.map(function(o){ return '<button data-hd="' + o[0] + '" aria-pressed="' + (o[0] === dir) + '">' + o[1] + '</button>'; }).join('') + '</div>';
+  if (dir === 'bez') return h + bezHtml(m);
   var tOut = sum(list.filter(function(o){ return o.dir === 'out'; })), tIn = sum(list.filter(function(o){ return o.dir === 'in'; }));
   h += '<section class="card"><div class="kv"><span>Отправлено</span><b>' + money(tOut) + '</b></div><div class="kv"><span>Получено</span><b style="color:var(--ok)">' + money(tIn) + '</b></div><div class="kv"><span>Записей</span><b>' + list.length + '</b></div></section>';
   if (!list.length) return h + '<section class="card"><div class="empty">За ' + esc(monthLabel(m).toLowerCase()) + ' записей нет.</div></section>';
@@ -1564,6 +1567,18 @@ function vHist(){
     h += '<div class="dayh"><span>' + esc(dayLabel(g.d)) + '</span><span>' + money(sum(g.items.filter(function(o){ return o.dir === 'out'; })), true) + '</span></div><section class="card" style="padding-block:6px">' + g.items.map(opRow).join('') + '</section>';
   });
   return h;
+}
+/* безкарт: ордера, где деньги прошли мимо моих карт (вилки) — в лимиты не идут, в профит идут как обычно */
+function bezHtml(m){
+  var list = S.orders.filter(function(o){ return o.bezkart > 0 && o.status !== 'cancelled' && orderDate(o).slice(0, 7) === m; }).sort(function(a, b){ return (b.created || 0) - (a.created || 0); });
+  var tb = 0, ts = 0; list.forEach(function(o){ if (o.side === 'sell') ts += o.bezkart; else tb += o.bezkart; });
+  var h = '<section class="card"><div class="kv"><span>Покупки мимо карт</span><b>' + money(tb) + '</b></div><div class="kv"><span>Продажи мимо карт</span><b style="color:var(--ok)">' + money(ts) + '</b></div><div class="kv"><span>Ордеров</span><b>' + list.length + '</b></div>' +
+    '<p class="note" style="margin-bottom:0">Эти суммы не тратят лимиты и не меняют балансы карт. Профит по ордерам считается как обычно. Чтобы отметить ордер, открой его во «Требует внимания» и нажми «Безкарт».</p></section>';
+  if (!list.length) return h + '<section class="card"><div class="empty">За ' + esc(monthLabel(m).toLowerCase()) + ' безкарта не было.</div></section>';
+  return h + '<section class="card" style="padding-block:6px">' + list.map(function(o){
+    var part = o.bezkart < (o.fiat || 0) - 1;
+    return '<button class="op" data-bez="' + esc(o.id) + '"><span class="oic ' + orderDir(o) + '">' + (o.side === 'sell' ? ARR_IN : ARR_OUT) + '</span><span class="mid"><span class="t1">' + esc(orderTitle(o)) + '</span><span class="t2">' + esc(dayLabel(orderDate(o)) + (part ? ' · на карту ' + money((o.fiat || 0) - o.bezkart) : ' · целиком мимо карт')) + '</span></span><span class="sum' + (o.side === 'sell' ? ' in' : '') + '">' + money(o.bezkart) + '</span></button>';
+  }).join('') + '</section>';
 }
 function opRow(o, inCard){
   var c = byId(S.cards, o.card), adj = o.src === 'adjust';
@@ -1743,7 +1758,7 @@ function openOp(o, opts){
   $('#oTitle').textContent = o ? (OP.dir === 'xfer' ? 'Перевод между картами' : 'Запись') : 'Новая запись';
   $('#oRate').value = o && o.rate > 0 ? kopIn(o.rate) : '';
   $('#oAmt').value = o ? kopIn(Math.abs(o.amount)) : ''; $('#oDate').value = o ? o.date : today(); $('#oNote').value = o ? (o.note || '') : '';
-  $('#oSearch').value = ''; OPW = opts.who || (S.view === 'cards' && S.person) || 'all'; renderOpWho(); $('#oOcr').hidden = true; $('#oSkip').hidden = true; $('#oDrop').hidden = !!o; $('#oDupe').hidden = true; $('#oImg').hidden = false; $('#oOrdSkip').hidden = true; OP.okx = null; OP.okxRc = null; $('#oRawWrap').hidden = true; $('#oRawBtn').hidden = true; $('#oRawBtn').textContent = 'Показать прочитанный текст';
+  $('#oSearch').value = ''; OPW = opts.who || (S.view === 'cards' && S.person) || 'all'; renderOpWho(); $('#oOcr').hidden = true; $('#oSkip').hidden = true; $('#oDrop').hidden = !!o; $('#oDupe').hidden = true; $('#oImg').hidden = false; $('#oBez').hidden = true; $('#oBezN').hidden = true; $('#oOrdSkip').hidden = true; OP.okx = null; OP.okxRc = null; $('#oRawWrap').hidden = true; $('#oRawBtn').hidden = true; $('#oRawBtn').textContent = 'Показать прочитанный текст';
   var d = $('#oDel'); d.hidden = !o; d.classList.remove('armed'); d.textContent = 'Удалить';
   renderOpCards(); syncOp(); if (!opts.keep) openSheet('sOp');
 }
@@ -2601,7 +2616,7 @@ $('#kxOff').addEventListener('click', function(){
 /* квитанция из «Поделиться» подходит к ордеру из «Требует внимания»? */
 /* ордер может быть оплачен несколькими квитанциями с разных карт */
 function ordTol(o){ return Math.max((o.fiat || 0) * 0.03, 10000); }
-function ordLeft(o){ return (o.fiat || 0) - (o.partSum || 0); }
+function ordLeft(o){ return (o.fiat || 0) - (o.bezkart || 0) - (o.partSum || 0); }
 function ordPending(o){ var dn = (o.rcDone || []).concat(o.rcBad || []); return (o.receipts || []).filter(function(r){ return r && r.url && dn.indexOf(r.url) < 0; }); }
 function ordBad(o){ var dn = o.rcDone || []; return (o.rcBad || []).filter(function(u){ return dn.indexOf(u) < 0; }); }
 function shortWhy(o){ return 'Записано ' + money(o.partSum || 0) + ' из ' + money(o.fiat || 0) + '. Не хватает ' + money(Math.max(0, ordLeft(o))) + ' — поделись недостающей квитанцией'; }
@@ -2741,6 +2756,10 @@ function openOrder(o){
   $('#oAmt').value = kopIn(Math.max(0, ordLeft(o)) || o.fiat || 0); $('#oDate').value = orderDate(o);
   $('#oNote').value = 'OKX ' + (o.counterparty || '') + ' #' + String(o.orderId).slice(-6);
   $('#oDrop').hidden = true; $('#oOrdSkip').hidden = false; $('#oOrdSkip').classList.remove('armed'); $('#oOrdSkip').textContent = 'Не учитывать этот ордер';
+  var bz = $('#oBez'); bz.hidden = false; bz.classList.remove('armed');
+  bz.textContent = o.bezkart ? 'Отменить безкарт (' + money(o.bezkart) + ')' : 'Безкарт — мимо моих карт';
+  $('#oBezN').hidden = false;
+  $('#oBezN').textContent = o.bezkart ? 'Сейчас ' + money(o.bezkart) + ' по этому ордеру прошли мимо твоих карт.' : 'Вилка: деньги ушли напрямую, не через твои карты. Если часть пришла на твою карту (например 300 ₴), выбери карту и впиши эту сумму, остальное запишется как безкарт. Профит по ордеру считается как обычно.';
   if (o.receipts && o.receipts.length && okxOn()){
     var bq = ordBad(o), pq = ordPending(o), shownRc = bq.length ? {url:bq[0]} : pq.length ? pq[0] : o.receipts[o.receipts.length - 1];
     OP.okxRc = bq.length || pq.length ? shownRc.url : null;
@@ -2749,6 +2768,23 @@ function openOrder(o){
   } else if (o.needWhy){ $('#oOcr').hidden = false; $('#oImg').hidden = true; setOcr('warn', o.needWhy, 'Выбери карту, на которую ' + (o.side === 'sell' ? 'пришли' : 'ушли с') + ' деньги, и нажми «Сохранить».', 0); }
   syncOp(); renderOpCards();
 }
+$('#oBez').addEventListener('click', function(){
+  var o = byId(S.orders, OP.okx), btn = $('#oBez'); if (!o) return;
+  if (o.bezkart){
+    if (!arm(btn, 'Нажми ещё раз: вернуть ордер во «Внимание»')) return;
+    store.patch('lorders', o.id, {bezkart:0, skipped:false, done:false, need:true, needWhy:'Безкарт отменён — выбери карту'}).catch(dbErr);
+    toast('Безкарт отменён'); closeSheet(); return;
+  }
+  var left = Math.max(0, ordLeft(o)), sp = readOpForm(), part = !!sp.card && sp.amount > 0 && sp.amount < left;
+  if (!arm(btn, part ? 'Ещё раз: ' + money(sp.amount) + ' на карту, ' + money(left - sp.amount) + ' безкарт' : 'Ещё раз: весь ордер ' + money(left) + ' — безкарт')) return;
+  if (part && !validOp(sp)) return;
+  var bz = part ? left - sp.amount : left;
+  o.bezkart = (o.bezkart || 0) + bz;
+  if (part){ var ids = commitOp(sp); linkToOrder(o, ids, sp, 'manual', OP.okxRc); notifyRecord(sp); }
+  store.patch('lorders', o.id, {bezkart:o.bezkart, bezkartAt:Date.now(), done:true, need:false, needWhy:'', skipped:!part, doneAt:Date.now()}).catch(dbErr);
+  vib(12); toast(part ? 'Записал: ' + doneMsg(sp) + ', безкарт ' + money(bz) : 'Безкарт: ' + money(bz), 3500);
+  if (OQ.length) nextReceipt(); else closeSheet();
+});
 $('#oOrdSkip').addEventListener('click', function(){
   if (!OP.okx) return;
   if (!arm($('#oOrdSkip'), 'Нажми ещё раз: ордер не попадёт в лимиты')) return;
@@ -2914,7 +2950,7 @@ document.addEventListener('click', function(e){
   if (cp && !cp.closest('.sheet')){ e.stopPropagation(); return doCopy(cp); }
   var eb = e.target.closest('[data-bal]');
   if (eb && !eb.closest('.sheet')){ var bc = byId(S.cards, eb.getAttribute('data-bal')); if (bc) editBal(bc); return; }
-  var t = e.target.closest('[data-tab],[data-card],[data-op],[data-hold],[data-act],[data-sort],[data-m],[data-hd],[data-th],[data-sh],[data-person],[data-ord],[data-fop],[data-bres],[data-buy]');
+  var t = e.target.closest('[data-tab],[data-card],[data-op],[data-hold],[data-act],[data-sort],[data-m],[data-hd],[data-bez],[data-th],[data-sh],[data-person],[data-ord],[data-fop],[data-bres],[data-buy]');
   if (!t || t.closest('.sheet')) return;
   if (t.hasAttribute('data-buy')) return openBuy(t.getAttribute('data-buy'));
   if (t.hasAttribute('data-fop')){ var fp = byId(fops(), t.getAttribute('data-fop')); if (fp) openFop(fp); return; }
@@ -2928,6 +2964,7 @@ document.addEventListener('click', function(e){
   if (t.hasAttribute('data-sort')){ var k = t.getAttribute('data-sort'); if (PR.sort === k) PR.dir = -PR.dir; else { PR.sort = k; PR.dir = (k === 'holder' || k === 'bank') ? 1 : -1; } savePrefs(); return render(); }
   if (t.hasAttribute('data-m')){ if (t.disabled) return; S.month = shiftMonth(S.month, +t.getAttribute('data-m')); return render(); }
   if (t.hasAttribute('data-hd')){ S.histDir = t.getAttribute('data-hd'); return render(); }
+  if (t.hasAttribute('data-bez')){ var bo = byId(S.orders, t.getAttribute('data-bez')); if (bo) openOrder(bo); return; }
   if (t.hasAttribute('data-th')){ PR.theme = t.getAttribute('data-th'); savePrefs(); applyTheme(); return render(); }
   if (t.hasAttribute('data-sh')){ PR.shape = t.getAttribute('data-sh'); savePrefs(); applyTheme(); return render(); }
   var a = t.getAttribute('data-act');
