@@ -804,6 +804,10 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
     <div class="col"><div class="fl">Сумма</div><label class="field"><input id="oAmt" type="text" inputmode="decimal" placeholder="0" autocomplete="off"><span class="suf">₴</span></label></div>
     <div class="col"><div class="fl">Дата</div><label class="field"><input id="oDate" type="date"></label></div>
   </div>
+  <div id="oRateWrap" class="stack" hidden>
+    <div class="col"><div class="fl" id="oRateL">Курс USDT — для профита</div><label class="field"><input id="oRate" type="text" inputmode="decimal" placeholder="необязательно, например 41,25" autocomplete="off"><span class="suf">₴</span></label></div>
+    <p class="note" id="oRateN" style="margin:0"></p>
+  </div>
   <label class="field"><input id="oNote" type="text" maxlength="60" placeholder="Комментарий (необязательно)" autocomplete="off"></label>
   <button class="btn" id="oSave" type="button">Сохранить</button>
   <button class="btn ghost sm" id="oSkip" type="button" hidden>Пропустить эту квитанцию</button>
@@ -1701,6 +1705,7 @@ function openOp(o, opts){
     OP = {id:o.id, orig:o, dir:'xfer', card:outO ? outO.card : o.card, to:inO ? inO.card : null, lim:o.lim !== false, src:o.src || 'manual', ids:[o.id, o.pair]};
   } else OP = o ? {id:o.id, orig:o, dir:o.dir, card:o.card, to:null, lim:true, src:o.src || 'manual'} : {id:null, dir:'out', card:opts.card || null, to:null, lim:true, src:'manual'};
   $('#oTitle').textContent = o ? (OP.dir === 'xfer' ? 'Перевод между картами' : 'Запись') : 'Новая запись';
+  $('#oRate').value = o && o.rate > 0 ? kopIn(o.rate) : '';
   $('#oAmt').value = o ? kopIn(Math.abs(o.amount)) : ''; $('#oDate').value = o ? o.date : today(); $('#oNote').value = o ? (o.note || '') : '';
   $('#oSearch').value = ''; OPW = opts.who || (S.view === 'cards' && S.person) || 'all'; renderOpWho(); $('#oOcr').hidden = true; $('#oSkip').hidden = true; $('#oDrop').hidden = !!o; $('#oDupe').hidden = true; $('#oImg').hidden = false; $('#oOrdSkip').hidden = true; OP.okx = null; OP.okxRc = null; $('#oRawWrap').hidden = true; $('#oRawBtn').hidden = true; $('#oRawBtn').textContent = 'Показать прочитанный текст';
   var d = $('#oDel'); d.hidden = !o; d.classList.remove('armed'); d.textContent = 'Удалить';
@@ -1744,7 +1749,19 @@ function syncOp(){
   $('#oCardLbl').textContent = OP.dir === 'xfer' ? 'Откуда' : 'Карта';
   $('#oLimSw').setAttribute('aria-checked', String(OP.lim));
   if (OP.dir === 'xfer') renderOpTo();
+  syncRate();
 }
+/* курс: ручное получение = продажа USDT, ручная отправка = покупка USDT — и то и другое идёт в «Профит» */
+function syncRate(){
+  var show = OP.dir !== 'xfer' && OP.src !== 'okx' && OP.src !== 'adjust' && OP.src !== 'buy';
+  $('#oRateWrap').hidden = !show; if (!show) return;
+  $('#oRateL').textContent = OP.dir === 'in' ? 'Курс продажи USDT — для профита' : 'Курс покупки USDT — для профита';
+  var r = $('#oRate').value.trim() ? parseMoney($('#oRate').value) : 0, a = parseMoney($('#oAmt').value), n = $('#oRateN');
+  if (r > 0 && a > 0) n.textContent = (OP.dir === 'in' ? 'В профит пойдёт как продажа ' : 'В профит пойдёт как покупка ') + String(Math.round(a / r * 100) / 100).replace('.', ',') + ' USDT по ' + kopIn(r) + ' ₴.';
+  else n.textContent = 'Укажи курс, если это сделка с USDT мимо OKX: ' + (OP.dir === 'in' ? 'получение посчитается как продажа' : 'отправка посчитается как покупка') + ' и попадёт в «Профит». Пусто — в профит не идёт.';
+}
+$('#oRate').addEventListener('input', syncRate);
+$('#oAmt').addEventListener('input', syncRate);
 $('#oDir').addEventListener('click', function(e){ var b = e.target.closest('[data-od]'); if (!b) return; if (OP.id && ((OP.dir === 'xfer') !== (b.getAttribute('data-od') === 'xfer'))){ toast('Тип записи менять нельзя, удали и создай заново'); return; } OP.dir = b.getAttribute('data-od'); syncOp(); });
 $('#oCards').addEventListener('click', function(e){ var b = e.target.closest('[data-oc]'); if (b){ OP.card = b.getAttribute('data-oc'); if (OP.to === OP.card) OP.to = null; syncOp(); } });
 $('#oTo').addEventListener('change', function(e){ OP.to = e.target.value || null; });
@@ -1768,6 +1785,7 @@ function commitOp(spec){
     return [ia, ib];
   }
   var d = {card:spec.card, dir:spec.dir, amount:spec.amount, date:spec.date, note:notes, src:spec.src};
+  if (spec.rate > 0) d.rate = spec.rate; else if (spec.id) d.rate = 0;
   if (spec.src === 'buy'){ d.kind = 'buy'; d.lim = false; }                       // покупка для прогрева: с баланса, но не в лимит
   else if (spec.dir === 'out' && spec.src !== 'adjust') d.fee = feeFor(spec.card, spec.amount);
   if (spec.id){ store.patch('lops', spec.id, d).catch(dbErr); return []; }
@@ -1801,12 +1819,13 @@ function tgSend(text){
   return fetch(tgUrl(text), {mode:'no-cors'}).then(function(){ return true; }).catch(function(){ return false; });
 }
 function readOpForm(){
-  return {id:OP.id, ids:OP.ids, dir:OP.dir, card:OP.card, to:OP.to, lim:OP.lim, amount:parseMoney($('#oAmt').value), date:$('#oDate').value || today(), note:$('#oNote').value.trim(), src:OP.src};
+  return {id:OP.id, ids:OP.ids, dir:OP.dir, card:OP.card, to:OP.to, lim:OP.lim, amount:parseMoney($('#oAmt').value), date:$('#oDate').value || today(), note:$('#oNote').value.trim(), src:OP.src, rate:$('#oRateWrap').hidden || !$('#oRate').value.trim() ? 0 : parseMoney($('#oRate').value)};
 }
 function validOp(sp){
   if (!sp.card){ shake($('#oCards')); toast(sp.dir === 'xfer' ? 'Выбери, с какой карты' : 'Выбери карту'); return false; }
   if (sp.dir === 'xfer' && (!sp.to || sp.to === sp.card)){ shake($('#oTo').parentNode); toast('Выбери, на какую карту'); return false; }
   if (!(sp.amount > 0)){ shake($('#oAmt').parentNode); toast('Впиши сумму'); return false; }
+  if (isNaN(sp.rate) || sp.rate < 0 || (sp.rate > 0 && (sp.rate < 1000 || sp.rate > 20000))){ shake($('#oRate').parentNode); toast('Курс впиши числом, например 41,25'); return false; }
   return true;
 }
 function doneMsg(sp){
@@ -3023,8 +3042,14 @@ var IC_SELL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
 /* ============ состояние ============ */
 
 var CALC = null, CALC_KEY = '';
+function opDeals(){   // ручные записи «Лимитов» с курсом: получение = продажа, отправка = покупка
+  return (S.ops || []).filter(function(o){ return o.rate > 0 && o.amount > 0 && o.date && o.kind !== 'xfer' && (o.dir === 'in' || o.dir === 'out'); }).map(function(o){
+    var t = o.ts && kyiv(o.ts).day === o.date ? o.ts : new Date(o.date + 'T12:00:00').getTime(), c = byId(S.cards, o.card);
+    return {id:'op_' + o.id, s:o.dir === 'in' ? 's' : 'b', u:o.amount, q:o.amount / o.rate, t:t, c:o.note || (c ? (c.holder || '') + ' · ' + c.bank + (c.fop ? ' ФОП' : '') : ''), src:'op', g:'Запись', m:kyiv(t).day.slice(0, 7)};
+  });
+}
 function allDeals(){
-  var out = [];
+  var out = opDeals();
   Object.keys(PS.months).forEach(function(m){ var d = PS.months[m] || {}; Object.keys(d).forEach(function(id){ var x = d[id]; if (x && typeof x === 'object'){ var o = Object.assign({}, x); o.id = id; o.m = m; out.push(o); } }); });
   return out;
 }
@@ -3034,7 +3059,8 @@ function calc(){
   // комиссии банков (записи «Лимитов» с полем fee) вычитаются из профита своего дня
   var fees = {}, fsum = 0;
   (S.ops || []).forEach(function(o){ if (o.fee > 0 && o.date){ fees[o.date] = (fees[o.date] || 0) + o.fee; fsum += o.fee; } });
-  var key = JSON.stringify([Object.keys(PS.months).map(function(m){ return m + ':' + Object.keys(PS.months[m] || {}).length; }), PS.ver || 0, PS.set.start || null, fsum, Object.keys(fees).length]);
+  var opk = opDeals().map(function(d){ return d.id + d.u + '/' + d.q + '@' + d.t; }).join(',');
+  var key = JSON.stringify([Object.keys(PS.months).map(function(m){ return m + ':' + Object.keys(PS.months[m] || {}).length; }), PS.ver || 0, PS.set.start || null, fsum, Object.keys(fees).length, opk]);
   if (CALC && key === CALC_KEY) return CALC;
   CALC = computeProfit(allDeals(), startBal());
   CALC.days.forEach(function(g){ g.fee = fees[g.day] || 0; g.gross = g.profit; g.profit = g.profit - g.fee; });
@@ -3166,14 +3192,14 @@ function vHome(){
   // последние сделки
   var todays = c.deals.filter(function(d){ return d.day === td; }).slice(-8).reverse();
   h += '<div class="sec"><span>Сделки сегодня</span><span>' + (g.n || '') + '</span></div>';
-  h += '<section class="card" style="padding-block:6px">' + (todays.length ? todays.map(function(d){ return dealRow(findDeal(d.id) || d); }).join('') : '<div class="empty">Сегодня сделок пока нет. Ордера OKX появятся сами, а нал добавь через «+».</div>') + '</section>';
+  h += '<section class="card" style="padding-block:6px">' + (todays.length ? todays.map(function(d){ return dealRow(findDeal(d.id) || opDeals().filter(function(x){ return x.id === d.id; })[0] || d); }).join('') : '<div class="empty">Сегодня сделок пока нет. Ордера OKX появятся сами, а нал добавь через «+».</div>') + '</section>';
   if (todays.length) h += '<button class="btn ghost sm" data-psub="deals" style="max-width:320px">Все сделки</button>';
   return h;
 }
 function dealRow(d){
   if (!d) return '';
   var c = calc(), pr = d.s === 's' && !d.off ? c.sale[d.id] : null, pp = d.q ? d.u / d.q : 0;
-  var tag = d.src === 'man' ? (d.g || 'Вручную') : (d.ed ? 'изменён' : '');
+  var tag = d.src === 'man' || d.src === 'op' ? (d.g || 'Вручную') : (d.ed ? 'изменён' : '');
   return '<button class="dl' + (d.off ? ' off' : '') + '" data-deal="' + esc(d.id) + '"><span class="oic ' + (d.s === 's' ? 'sell' : 'buy') + '">' + (d.s === 's' ? IC_SELL : IC_BUY) + '</span>' +
     '<span class="mid"><span class="t1">' + (d.s === 's' ? 'Продажа ' : 'Покупка ') + usdt(d.q) + (tag ? '<span class="tag">' + esc(tag) + '</span>' : '') + (d.off ? '<span class="tag">не учитывается</span>' : '') + '</span>' +
     '<span class="t2">' + timeStr(d.t) + ' · ' + price(pp) + ' ₴' + (d.c ? ' · ' + esc(d.c) : '') + (d.n ? ' · ' + esc(d.n) : '') + '</span></span>' +
@@ -3299,7 +3325,7 @@ function vDeals(){
   var list = allDeals().filter(function(d){
     if (kyiv(d.t).day.slice(0, 7) !== m) return false;
     if (f === 'okx' && d.src !== 'okx') return false;
-    if (f === 'man' && d.src !== 'man') return false;
+    if (f === 'man' && d.src !== 'man' && d.src !== 'op') return false;
     if (f === 'off' && !d.off) return false;
     if (q && String(d.c || '').toLowerCase().indexOf(q) < 0 && String(d.n || '').toLowerCase().indexOf(q) < 0) return false;
     return true;
@@ -3507,7 +3533,7 @@ function click(e){
   var t = e.target.closest('[data-psub],[data-deal],[data-pm],[data-df],[data-ss],[data-hb],[data-pact]');
   if (!t || t.closest('.sheet')) return false;
   if (t.hasAttribute('data-psub')){ PS.view = t.getAttribute('data-psub'); PS.dealLim = 25; if (S.view !== 'profit'){ S.view = 'profit'; window.scrollTo(0, 0); render(true); } else rr(); return true; }
-  if (t.hasAttribute('data-deal')){ var d = findDeal(t.getAttribute('data-deal')); if (d) openDeal(d); return true; }
+  if (t.hasAttribute('data-deal')){ var di = t.getAttribute('data-deal'); if (/^op_/.test(di)){ var oo = byId(S.ops, di.slice(3)); if (oo) openOp(oo); return true; } var d = findDeal(di); if (d) openDeal(d); return true; }
   if (t.hasAttribute('data-pm')){ if (t.disabled) return true; PS.month = shiftMonth(PS.month, +t.getAttribute('data-pm')); PS.dealLim = 25; rr(); return true; }
   if (t.hasAttribute('data-df')){ PS.dealF = t.getAttribute('data-df'); rr(); return true; }
   if (t.hasAttribute('data-ss')){ PS.statSort = t.getAttribute('data-ss'); rr(); return true; }
