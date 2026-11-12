@@ -816,7 +816,7 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
   <div class="grab"></div>
   <div class="sh-h"><h3 id="cTitle">Новая карта</h3><button class="x" data-close aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
   <div class="grid2">
-    <div class="col"><div class="fl">Чья карта</div><label class="field"><input id="cHolder" type="text" maxlength="30" list="dlHolders" placeholder="Артём" autocomplete="off"></label></div>
+    <div class="col"><div class="fl" id="cHolderL">Чья карта</div><label class="field"><input id="cHolder" type="text" maxlength="30" list="dlHolders" placeholder="Артём" autocomplete="off"></label></div>
     <div class="col"><div class="fl">Банк</div><label class="field"><input id="cBank" type="text" maxlength="30" list="dlBanks" placeholder="Монобанк" autocomplete="off"></label></div>
   </div>
   <datalist id="dlHolders"></datalist>
@@ -825,7 +825,8 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
     <div class="col"><div class="fl">ІПН</div><label class="field"><input id="cInn" class="mono" type="text" inputmode="numeric" maxlength="10" placeholder="10 цифр" autocomplete="off"></label></div>
   </div>
   <datalist id="dlBanks"><option value="Монобанк"><option value="ПриватБанк"><option value="ПУМБ"><option value="А-Банк"><option value="Sense Bank"><option value="Ощадбанк"><option value="Райффайзен"><option value="Укрсиббанк"><option value="Izibank"><option value="Таскомбанк"><option value="Глобус"><option value="Восток"></datalist>
-  <div class="col"><div class="fl">Номер карты</div><label class="field"><input id="cNum" class="mono" type="text" inputmode="numeric" maxlength="19" placeholder="0000 0000 0000 0000" autocomplete="off"></label></div>
+  <div class="seg" id="cType" style="--n:2"><span class="ind"></span><button type="button" data-ct="card">Карта</button><button type="button" data-ct="fop">Счёт ФОП</button></div>
+  <div class="col"><div class="fl" id="cNumL">Номер карты</div><label class="field"><input id="cNum" class="mono" type="text" inputmode="numeric" maxlength="19" placeholder="0000 0000 0000 0000" autocomplete="off"></label></div>
   <div class="grid2">
     <div class="col"><div class="fl">Лимит отправки в мес.</div><label class="field"><input id="cOut" type="text" inputmode="decimal" placeholder="150 000" autocomplete="off"><span class="suf">₴</span></label></div>
     <div class="col"><div class="fl">Лимит получения</div><label class="field"><input id="cIn" type="text" inputmode="decimal" placeholder="не нужен" autocomplete="off"><span class="suf">₴</span></label></div>
@@ -1096,6 +1097,10 @@ function uid(){ return Date.now().toString(36) + Math.random().toString(36).slic
 function digits(s){ return String(s || '').replace(/\D/g, ''); }
 function fmtCard(n){ n = digits(n); return n.replace(/(\d{4})(?=\d)/g, '$1 '); }
 function last4(c){ var d = digits(c.number); return d.slice(-4); }
+function isFop(c){ return !!(c && c.fop); }
+function numDisp(c){ return isFop(c) ? ibanFmt(c.number) : fmtCard(c.number); }
+function numShort(c){ if (!isFop(c)) return fmtCard(c.number); var ib = ibanClean(c.number); return ib.slice(0, 4) + ' … ' + ib.slice(-8).replace(/(.{4})(?=.)/g, '$1 '); }
+function numCopy(c){ return isFop(c) ? ibanClean(c.number) : digits(c.number); }
 function vib(ms){ try { if (navigator.vibrate) navigator.vibrate(ms); } catch(e){} }
 function plural(n, a, b, c){ var m10 = n % 10, m100 = n % 100; return m10 === 1 && m100 !== 11 ? a : (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20) ? b : c); }
 function luhn(n){ var s = 0, d = digits(n), alt = false; for (var i = d.length - 1; i >= 0; i--){ var x = +d[i]; if (alt){ x *= 2; if (x > 9) x -= 9; } s += x; alt = !alt; } return d.length >= 13 && s % 10 === 0; }
@@ -1134,6 +1139,7 @@ function bankDefault(name){
   var h = 0; for (var j = 0; j < name.length; j++) h = (h * 31 + name.charCodeAt(j)) % 360;
   return {bg:'hsl(' + h + ' 45% 38%)', fg:'#FFFFFF'};
 }
+function cardBadge(c, size){ var b = bankColors(c.bank); return '<span class="bk' + (size ? ' ' + size : '') + '" style="--bb:' + b.bg + ';--bf:' + b.fg + '">' + esc(c.bank || 'Банк') + (isFop(c) ? ' · ФОП' : '') + '</span>'; }
 function bankBadge(name, size){ var b = bankColors(name); return '<span class="bk' + (size ? ' ' + size : '') + '" style="--bb:' + b.bg + ';--bf:' + b.fg + '">' + esc(name || 'Банк') + '</span>'; }
 
 /* яркость цвета → тёмный или светлый текст поверх */
@@ -1264,7 +1270,7 @@ function savePerson(name, d){
   var all = Object.assign({}, (S.set || {}).people || {}); all[name] = Object.assign({}, all[name] || {}, d);
   S.set = Object.assign({}, S.set, {people:all}); return store.setSettings({people:all}).catch(dbErr);
 }
-function cardLabel(c){ return (c.holder || 'Без имени') + ' · ' + (c.bank || 'Банк') + ' ••' + last4(c); }
+function cardLabel(c){ return (c.holder || 'Без имени') + ' · ' + (c.bank || 'Банк') + (isFop(c) ? ' ФОП' : '') + ' ••' + last4(c); }
 function visibleCards(){
   var q = S.q.trim().toLowerCase(), qd = digits(q);
   var list = S.cards.filter(function(c){
@@ -1395,7 +1401,7 @@ var IC_L = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wi
 var IC_R = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>';
 
 function pctTxt(p){ var v = p * 100; return (v > 0 && v < 1 ? '<1' : Math.round(v)) + '<small>%</small>'; }
-function copyBtn(c){ return '<button class="copy" data-copy="' + esc(c.id) + '" type="button"><span class="mono">' + esc(fmtCard(c.number) || 'номер не указан') + '</span><span class="ci">' + COPY_IC + '<span class="cl">Копировать</span></span></button>'; }
+function copyBtn(c){ return '<button class="copy" data-copy="' + esc(c.id) + '" type="button"><span class="mono">' + esc(numShort(c) || 'номер не указан') + '</span><span class="ci">' + COPY_IC + '<span class="cl">Копировать</span></span></button>'; }
 function advChip(a){ return '<span class="adv" style="--ac:' + a.c + '"><i></i>' + a.t + '</span>'; }
 
 function holderOf(c){ return (c.holder || '').trim() || 'Без имени'; }
@@ -1473,7 +1479,7 @@ function cardsBlock(list){
   h += '<div class="list">' + list.map(function(x){
     var c = x.c, s = x.s, col = c.off ? 'var(--muted)' : heat(s.p);
     return '<article class="kc' + (c.off ? ' off' : '') + '" style="--hc:' + col + '">' +
-      '<div class="kc-top" data-card="' + esc(c.id) + '"><div class="kc-who">' + bankBadge(c.bank, 'lg') + (S.person ? '' : '<span class="hn">' + esc(c.holder || 'Без имени') + '</span>') + '</div><div class="pct">' + (s.lim ? pctTxt(s.p) : '—') + '</div></div>' +
+      '<div class="kc-top" data-card="' + esc(c.id) + '"><div class="kc-who">' + cardBadge(c, 'lg') + (S.person ? '' : '<span class="hn">' + esc(c.holder || 'Без имени') + '</span>') + '</div><div class="pct">' + (s.lim ? pctTxt(s.p) : '—') + '</div></div>' +
       '<div class="balrow"><div class="bl"><small>Баланс</small>' + (s.bal !== null ? '<b>' + money(s.bal, true) + '</b>' : '<b class="na">не указан</b>') + '<button class="edbtn" data-bal="' + esc(c.id) + '" type="button">' + (s.bal !== null ? 'Изменить' : 'Указать') + '</button></div>' +
       '<div class="flow"><span>Пришло <span class="in">+' + moneyS(s.gotM) + '</span></span><span>Ушло <span class="out">−' + moneyS(s.sentM) + '</span></span></div></div>' +
       copyBtn(c) +
@@ -1490,7 +1496,7 @@ function cardsBlock(list){
     list.map(function(x){
       var c = x.c, s = x.s, col = c.off ? 'var(--muted)' : heat(s.p);
       return '<tr class="row' + (c.off ? ' off' : '') + '" data-card="' + esc(c.id) + '" style="--hc:' + col + '">' +
-        '<td class="first who">' + bankBadge(c.bank) + (S.person ? '' : '<span style="display:block">' + esc(c.holder || 'Без имени') + '</span>') + '</td>' +
+        '<td class="first who">' + cardBadge(c) + (S.person ? '' : '<span style="display:block">' + esc(c.holder || 'Без имени') + '</span>') + '</td>' +
         '<td>' + copyBtn(c) + '</td>' +
         '<td class="r bcell"><b>' + (s.bal !== null ? money(s.bal, true) : '—') + '</b><div class="sm"><span class="in">+' + moneyS(s.gotM) + '</span> / <span class="out">−' + moneyS(s.sentM) + '</span></div></td>' +
         '<td class="r num"><b>' + money(s.out, true) + '</b></td>' +
@@ -1644,11 +1650,11 @@ function fallbackCopy(txt){
 }
 function doCopy(btn){
   var c = byId(S.cards, btn.getAttribute('data-copy')); if (!c || !digits(c.number)) return toast('Номер не указан');
-  copyText(digits(c.number)).then(function(){
+  copyText(numCopy(c)).then(function(){
     vib(12); btn.classList.add('done'); var l = btn.querySelector('.cl'); if (l) l.textContent = 'Скопирован';
     setTimeout(function(){ btn.classList.remove('done'); if (l) l.textContent = 'Копировать'; }, 1600);
-    toast('Номер ' + c.bank + ' ••' + last4(c) + ' скопирован');
-  }).catch(function(){ toast('Не получилось скопировать. Номер: ' + fmtCard(c.number), 4000); });
+    toast((isFop(c) ? 'IBAN ФОП ' : 'Номер ') + c.bank + ' ••' + last4(c) + ' скопирован');
+  }).catch(function(){ toast('Не получилось скопировать. Номер: ' + numDisp(c), 4000); });
 }
 
 /* ============ шторки ============ */
@@ -1722,13 +1728,13 @@ function renderOpCards(){
   $('#oCards').innerHTML = list.length ? list.map(function(x, i){
     var c = x.c, s = x.s, hd = '';
     if (grp && !(i === 0 && c.id === OP.card) && holderOf(c) !== lastH){ lastH = holderOf(c); hd = '<div class="ocg">' + esc(lastH) + '</div>'; }
-    return hd + '<button type="button" class="oc" data-oc="' + esc(c.id) + '" style="--hc:' + heat(s.p) + '"><span class="dot"></span><span class="mid"><span class="t1">' + bankBadge(c.bank, 'sm') + esc(c.holder || 'Без имени') + ' ••' + esc(last4(c)) + '</span><span class="t2">' + (s.bal !== null ? 'баланс ' + money(s.bal, true) + ' · ' : '') + 'лимит осталось ' + money(s.left, true) + '</span></span><span class="pc">' + (s.lim ? Math.round(s.p * 100) + '%' : '—') + '</span></button>';
+    return hd + '<button type="button" class="oc" data-oc="' + esc(c.id) + '" style="--hc:' + heat(s.p) + '"><span class="dot"></span><span class="mid"><span class="t1">' + cardBadge(c, 'sm') + esc(c.holder || 'Без имени') + ' ••' + esc(last4(c)) + '</span><span class="t2">' + (s.bal !== null ? 'баланс ' + money(s.bal, true) + ' · ' : '') + 'лимит осталось ' + money(s.left, true) + '</span></span><span class="pc">' + (s.lim ? Math.round(s.p * 100) + '%' : '—') + '</span></button>';
   }).join('') : '<div class="empty" style="padding:10px">Карт не найдено</div>';
   pressSet($('#oCards'), 'data-oc', OP.card);
 }
 function renderOpTo(){
   var opts = S.cards.filter(function(c){ return c.id !== OP.card && (!c.off || c.id === OP.to); });
-  $('#oTo').innerHTML = '<option value="">Выбери карту</option>' + opts.map(function(c){ return '<option value="' + esc(c.id) + '"' + (c.id === OP.to ? ' selected' : '') + '>' + esc(c.bank + ' ••' + last4(c) + ' · ' + (c.holder || '')) + '</option>'; }).join('');
+  $('#oTo').innerHTML = '<option value="">Выбери карту</option>' + opts.map(function(c){ return '<option value="' + esc(c.id) + '"' + (c.id === OP.to ? ' selected' : '') + '>' + esc(c.bank + (isFop(c) ? ' ФОП' : '') + ' ••' + last4(c) + ' · ' + (c.holder || '')) + '</option>'; }).join('');
 }
 function syncOp(){
   var ix = OP.dir === 'in' ? 1 : OP.dir === 'xfer' ? 2 : 0;
@@ -1767,7 +1773,7 @@ function commitOp(spec){
   if (spec.id){ store.patch('lops', spec.id, d).catch(dbErr); return []; }
   var id = uid(); d.ts = now; store.put('lops', id, d).catch(dbErr); return [id];
 }
-function tagOf(c){ return c ? c.bank + ' ••' + last4(c) + (c.holder ? ' (' + c.holder + ')' : '') : 'карта'; }
+function tagOf(c){ return c ? c.bank + (isFop(c) ? ' ФОП' : '') + ' ••' + last4(c) + (c.holder ? ' (' + c.holder + ')' : '') : 'карта'; }
 function notifyRecord(spec){
   var set = S.set || {}, lines = [], inMonth = spec.date.slice(0,7) === curMonth();
   function one(card, dir, amt, countLim){
@@ -2181,11 +2187,11 @@ document.addEventListener('drop', function(e){ if (!shown) return; e.preventDefa
 /* ============ карта ============ */
 var CD = null;
 function openCard(c){
-  CD = c ? {id:c.id, orig:c, off:!!c.off} : {id:null, orig:null, off:false};
+  CD = c ? {id:c.id, orig:c, off:!!c.off, fop:isFop(c)} : {id:null, orig:null, off:false, fop:false};
   $('#cTitle').textContent = c ? (c.holder || '') + ' · ' + (c.bank || '') : 'Новая карта';
   $('#cHolder').value = c ? (c.holder || '') : (S.person || '');
   fillPers();
-  $('#cBank').value = c ? (c.bank || '') : ''; $('#cNum').value = c ? fmtCard(c.number) : '';
+  $('#cBank').value = c ? (c.bank || '') : ''; $('#cNum').value = c ? numDisp(c) : '';
   $('#cOut').value = c ? kopIn(c.limOut) : ''; $('#cIn').value = c ? kopIn(c.limIn) : '';
   var cb = c ? cardBal(c) : null; CD.balWas = cb; $('#cBal').value = cb !== null ? kopIn(cb) : '';
   $('#dlHolders').innerHTML = holders().map(function(h){ return '<option value="' + esc(h[0]) + '">'; }).join('') + (holders().some(function(h){ return h[0] === ME; }) ? '' : '<option value="' + esc(ME) + '">');
@@ -2197,33 +2203,52 @@ function openCard(c){
     $('#cFixIn').hidden = !c.limIn;
     $('#cFixOut').parentNode.style.gridTemplateColumns = c.limIn ? '' : '1fr';
   }
-  var d = $('#cDel'); d.hidden = !c; d.classList.remove('armed'); d.textContent = 'Удалить карту';
+  var d = $('#cDel'); d.hidden = !c; d.classList.remove('armed'); d.textContent = CD.fop ? 'Удалить счёт ФОП' : 'Удалить карту';
   syncCard(); openSheet('sCard');
 }
-function syncCard(){ setSeg($('#cStatus'), CD.off ? 1 : 0); pressSet($('#cStatus'), 'data-cs', CD.off ? 'off' : 'on'); }
+function syncCard(){
+  setSeg($('#cStatus'), CD.off ? 1 : 0); pressSet($('#cStatus'), 'data-cs', CD.off ? 'off' : 'on');
+  setSeg($('#cType'), CD.fop ? 1 : 0); pressSet($('#cType'), 'data-ct', CD.fop ? 'fop' : 'card');
+  $('#cHolderL').textContent = CD.fop ? 'Чей ФОП' : 'Чья карта';
+  var n = $('#cNum'); $('#cNumL').textContent = CD.fop ? 'IBAN счёта ФОП' : 'Номер карты';
+  n.placeholder = CD.fop ? 'UA00 0000 0000 0000 0000 0000 0000 0' : '0000 0000 0000 0000'; n.maxLength = CD.fop ? 36 : 19; n.inputMode = CD.fop ? 'text' : 'numeric';
+  if (!CD.id) $('#cTitle').textContent = CD.fop ? 'Новый счёт ФОП' : 'Новая карта';
+  $('#cBal').placeholder = CD.fop ? 'Сколько денег на счёте' : 'Сколько денег на карте';
+}
+$('#cType').addEventListener('click', function(e){
+  var b = e.target.closest('[data-ct]'); if (!b) return;
+  var f = b.getAttribute('data-ct') === 'fop'; if (f === CD.fop) return;
+  CD.fop = f; $('#cNum').value = '';
+  if (f){   // подставим IBAN из реквизитов ФОП этого человека, если он есть
+    var h = $('#cHolder').value.trim(), rq = fops().filter(function(x){ return ibanClean(x.iban) && (!h || (x.owner || '').trim() === h); })[0];
+    if (rq){ $('#cNum').value = ibanFmt(rq.iban); if (!$('#cBank').value.trim() && rq.bank) $('#cBank').value = rq.bank; }
+  }
+  syncCard();
+});
 function fillPers(){ var pr = personOf($('#cHolder').value); $('#cFio').value = pr.fio || ''; $('#cInn').value = pr.inn || ''; }
 $('#cHolder').addEventListener('change', fillPers);
 $('#cInn').addEventListener('input', function(e){ var d = digits(e.target.value).slice(0, 10); if (d !== e.target.value) e.target.value = d; });
 $('#cStatus').addEventListener('click', function(e){ var b = e.target.closest('[data-cs]'); if (b){ CD.off = b.getAttribute('data-cs') === 'off'; syncCard(); } });
-$('#cNum').addEventListener('input', function(e){ var el = e.target, d = digits(el.value).slice(0, 16), f = fmtCard(d); if (f !== el.value) el.value = f; });
+$('#cNum').addEventListener('input', function(e){ var el = e.target, f = CD && CD.fop ? ibanFmt(ibanClean(el.value).slice(0, 29)) : fmtCard(digits(el.value).slice(0, 16)); if (f !== el.value) el.value = f; });
 $('#cSave').addEventListener('click', function(){
-  var holder = $('#cHolder').value.trim().slice(0, 30), bank = $('#cBank').value.trim().slice(0, 30), num = digits($('#cNum').value);
+  var holder = $('#cHolder').value.trim().slice(0, 30), bank = $('#cBank').value.trim().slice(0, 30), num = CD.fop ? ibanClean($('#cNum').value) : digits($('#cNum').value);
   var lo = $('#cOut').value.trim() ? parseMoney($('#cOut').value) : 0, li = $('#cIn').value.trim() ? parseMoney($('#cIn').value) : 0;
-  if (!holder){ shake($('#cHolder').parentNode); toast('Впиши, чья карта'); return; }
+  if (!holder){ shake($('#cHolder').parentNode); toast(CD.fop ? 'Впиши, чей ФОП' : 'Впиши, чья карта'); return; }
   if (!bank){ shake($('#cBank').parentNode); toast('Впиши банк'); return; }
-  if (num.length !== 16){ shake($('#cNum').parentNode); toast('Номер карты: 16 цифр'); return; }
+  if (CD.fop ? !ibanOk(num) : num.length !== 16){ shake($('#cNum').parentNode); toast(CD.fop ? 'IBAN: UA и 27 цифр. Проверь, похоже на опечатку' : 'Номер карты: 16 цифр'); return; }
   if (isNaN(lo) || isNaN(li)){ toast('Лимит впиши цифрами, например 150000'); return; }
-  if (S.cards.some(function(c){ return c.id !== CD.id && digits(c.number) === num; })){ toast('Такая карта уже есть в базе'); return; }
+  if (S.cards.some(function(c){ return c.id !== CD.id && digits(c.number) === digits(num); })){ toast(CD.fop ? 'Такой счёт ФОП уже есть в базе' : 'Такая карта уже есть в базе'); return; }
   var fio = $('#cFio').value.trim().replace(/\s+/g, ' '), inn = digits($('#cInn').value);
   if (inn && inn.length !== 10){ shake($('#cInn').parentNode); toast('ІПН — 10 цифр'); return; }
   var prv = personOf(holder);
   if ((fio || inn) && (fio !== (prv.fio || '') || inn !== (prv.inn || ''))) savePerson(holder, {fio:fio, inn:inn});
   var bv = $('#cBal').value.trim() ? parseMoney($('#cBal').value) : null;
   if (bv !== null && isNaN(bv)){ shake($('#cBal').parentNode); toast('Баланс впиши цифрами'); return; }
-  var d = {holder:holder, bank:bank, number:num, limOut:lo, limIn:li, off:CD.off}, p;
+  var d = {holder:holder, bank:bank, number:num, limOut:lo, limIn:li, off:CD.off, fop:CD.fop}, p;
   if (bv !== null && bv !== CD.balWas){ d.bal = bv; d.balTs = Date.now(); }
   if (CD.id) p = store.patch('lcards', CD.id, d); else { d.ts = Date.now(); p = store.put('lcards', uid(), d); }
-  p.catch(dbErr); toast((CD.id ? 'Карта сохранена' : 'Карта добавлена') + (luhn(num) ? '' : '. Проверь номер, похоже на опечатку'), luhn(num) ? 2200 : 4000); closeSheet();
+  var okN = CD.fop || luhn(num), what = CD.fop ? 'Счёт ФОП' : 'Карта';
+  p.catch(dbErr); toast(what + (CD.id ? ' сохранен' + (CD.fop ? '' : 'а') : ' добавлен' + (CD.fop ? '' : 'а')) + (okN ? '' : '. Проверь номер, похоже на опечатку'), okN ? 2200 : 4000); closeSheet();
 });
 $('#cDel').addEventListener('click', function(){ if (!arm($('#cDel'), 'Удалить? Переводы по ней тоже')) return;
   var id = CD.id; S.ops.filter(function(o){ return o.card === id; }).forEach(function(o){ store.del('lops', o.id).catch(function(){}); });
