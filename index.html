@@ -1927,6 +1927,40 @@ function getWorker(){
   return tessP;
 }
 function isPdf(f){ return f && (f.type === 'application/pdf' || /\.pdf$/i.test(f.name || '')); }
+/* картинка → canvas */
+function fileCanvas(f){
+  return new Promise(function(res, rej){
+    var u = URL.createObjectURL(f), im = new Image();
+    im.onload = function(){ var cv = document.createElement('canvas'); cv.width = im.naturalWidth; cv.height = im.naturalHeight; cv.getContext('2d').drawImage(im, 0, 0); URL.revokeObjectURL(u); res(cv); };
+    im.onerror = function(){ URL.revokeObjectURL(u); rej(new Error('картинка не открылась')); };
+    im.src = u;
+  });
+}
+/* подготовка для распознавания: крупнее, в серый, тёмная тема → светлая, растянуть контраст.
+   Tesseract плохо читает светлый текст на тёмном фоне и мелкий шрифт — отсюда большая часть ошибок */
+function prepCanvas(src){
+  var w = src.width, h = src.height, k = w < 1100 ? Math.min(2.2, 1600 / w) : (w > 2400 ? 2400 / w : 1);
+  var cv = document.createElement('canvas'); cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+  var g = cv.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(src, 0, 0, cv.width, cv.height);
+  var d = g.getImageData(0, 0, cv.width, cv.height), a = d.data, n = a.length / 4, hist = new Uint32Array(256), sum = 0, i, y;
+  for (i = 0; i < a.length; i += 4){ y = (a[i] * 299 + a[i + 1] * 587 + a[i + 2] * 114) / 1000 | 0; a[i] = y; hist[y]++; sum += y; }
+  var inv = sum / n < 115, lo = 0, hi = 255, c = 0;
+  for (lo = 0; lo < 255 && (c += hist[lo]) < n * .01; lo++);
+  c = 0; for (hi = 255; hi > 0 && (c += hist[hi]) < n * .01; hi--);
+  var span = Math.max(40, hi - lo);
+  for (i = 0; i < a.length; i += 4){ y = (a[i] - lo) * 255 / span; y = y < 0 ? 0 : y > 255 ? 255 : y; if (inv) y = 255 - y; a[i] = a[i + 1] = a[i + 2] = y; }
+  g.putImageData(d, 0, 0);
+  return cv;
+}
+/* ИИ на сервере (когда сам телефон не разобрал): уменьшаем до ~1400 px и шлём JPEG */
+function aiReceipt(cv){
+  var t = S.set || {}; if (!okxOn() || DEMO || !cv) return Promise.reject(new Error('нет сервера'));
+  var k = Math.min(1, 1400 / Math.max(cv.width, cv.height)), c2 = document.createElement('canvas');
+  c2.width = Math.round(cv.width * k); c2.height = Math.round(cv.height * k); c2.getContext('2d').drawImage(cv, 0, 0, c2.width, c2.height);
+  return fetch(String(t.okxUrl).replace(/\/+$/, '') + '/rcai', {method:'POST', headers:{'x-app-key':t.okxKey, 'content-type':'application/json'}, body:JSON.stringify({img:c2.toDataURL('image/jpeg', .85)})})
+    .then(function(r){ return r.json(); }).then(function(j){ if (!j || !j.ok) throw new Error(j && j.error || 'ИИ не ответил'); return j.text || ''; });
+}
+function parsedScore(p){ var hs = matchCards(p); return (hs.length ? 2 : 0) + (hs.some(function(h){ return h.dir; }) ? 1 : 0) + (p.amount ? 2 : 0) + (p.date ? .5 : 0); }
 function isReceiptFile(f){ return f && (/^image\//.test(f.type) || isPdf(f)); }
 /* PDF: берём текст прямо из файла; если текста нет (скан) — рисуем 1-ю страницу и распознаём */
 var pdfP = null;
@@ -2006,14 +2040,27 @@ function nextReceipt(){
     var w = /recogn/.test(st) ? 35 + p * 65 : /load|init/.test(st) ? 5 + p * 30 : 5;
     $('#oProg i').style.width = Math.round(w) + '%';
   };
+  var srcCv = null;
+  var ocr = function(cv){ return getWorker().then(function(w){ return w.recognize(prepCanvas(cv)); }).then(function(x){ return x && x.data ? x.data.text : ''; }); };
   var job = isPdf(f) ? readPdf(f).then(function(r){
+      srcCv = r.canvas;
       try { $('#oImg').src = r.canvas.toDataURL('image/jpeg', .7); } catch(e){}
       if (r.text.replace(/\s/g, '').length > 40) return r.text;
-      return getWorker().then(function(w){ return w.recognize(r.canvas); }).then(function(x){ return x && x.data ? x.data.text : ''; });
-    }) : getWorker().then(function(w){ return w.recognize(f); }).then(function(r){ if (url) URL.revokeObjectURL(url); return r && r.data ? r.data.text : ''; });
+      return ocr(r.canvas);
+    }) : fileCanvas(f).then(function(cv){ srcCv = cv; return ocr(cv); })
+      .catch(function(){ return getWorker().then(function(w){ return w.recognize(f); }).then(function(r){ return r && r.data ? r.data.text : ''; }); })
+      .then(function(t){ if (url) URL.revokeObjectURL(url); return t; });
   job.then(function(text){
     lastRaw = text || ''; $('#oRaw').textContent = lastRaw || '(пусто)'; $('#oRawBtn').hidden = false;
-    applyParsed(parseReceipt(text));
+    var p = parseReceipt(text), sc = parsedScore(p);
+    if (sc >= 5 || !srcCv || !okxOn() || DEMO) return applyParsed(p);
+    // телефон разобрал не всё — просим ИИ на сервере и берём лучший вариант
+    setOcr('', 'Уточняю через ИИ…', 'Телефон прочитал не всё, сверяю с ИИ на сервере. Пара секунд.', 70);
+    return aiReceipt(srcCv).then(function(at){
+      var p2 = parseReceipt(at), s2 = parsedScore(p2);
+      if (s2 > sc){ lastRaw = 'ИИ:\n' + at + '\n\nТелефон:\n' + lastRaw; $('#oRaw').textContent = lastRaw; p = p2; }
+      applyParsed(p);
+    }).catch(function(){ applyParsed(p); });
   }).catch(function(e){
     console.error(e);
     setOcr('err', 'Не получилось прочитать', 'Проверь интернет при первом запуске или заполни вручную.', 0);
@@ -2713,7 +2760,11 @@ function processOrders(){
     return fetch(okxFileUrl(rc)).then(function(r){ if (!r.ok) throw new Error('файл ' + r.status); return r.blob(); })
       .then(function(blob){
         if (/pdf/.test(blob.type)) return readPdf(new File([blob], 'r.pdf', {type:'application/pdf'})).then(function(x){ return x.text; });
-        return getWorker().then(function(w){ return w.recognize(blob); }).then(function(x){ return x && x.data ? x.data.text : ''; });
+        return fileCanvas(blob).then(function(cv){ return getWorker().then(function(w){ return w.recognize(prepCanvas(cv)); }).then(function(x){
+          var t = x && x.data ? x.data.text : '', p0 = parseReceipt(t);
+          if (parsedScore(p0) >= 5) return t;
+          return aiReceipt(cv).then(function(at){ return parsedScore(parseReceipt(at)) > parsedScore(p0) ? at : t; }).catch(function(){ return t; });   // не разобрал сам — спросим ИИ
+        }); }).catch(function(){ return getWorker().then(function(w){ return w.recognize(blob); }).then(function(x){ return x && x.data ? x.data.text : ''; }); });
       })
       .then(function(text){
         var p = parseReceipt(text), hits = matchCards(p), want = orderDir(o);
