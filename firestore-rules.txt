@@ -40,6 +40,13 @@ service cloud.firestore {
     match /lphones/{id} {
       allow read, write: if isBot();
     }
+    // профит (сделки и настройки) — только чтение: сервер в 00:00 переносит профит дня в «Наши траты»
+    match /pdeals/{id} {
+      allow read: if isBot();
+    }
+    match /psettings/{id} {
+      allow read: if isBot();
+    }
     // покупки «под вопросом» (ждут 10 минут, не перевод ли это по ордеру)
     match /lpend/{id} {
       allow read, write: if isBot();
