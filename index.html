@@ -883,6 +883,7 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
   <div class="seg" id="cType" style="--n:2"><span class="ind"></span><button type="button" data-ct="card">Карта</button><button type="button" data-ct="fop">Счёт ФОП</button></div>
   <div class="col"><div class="fl" id="cNumL">Номер карты</div><label class="field"><input id="cNum" class="mono" type="text" inputmode="numeric" maxlength="19" placeholder="0000 0000 0000 0000" autocomplete="off"></label></div>
   <div class="grid2">
+    <div class="col" id="cIbanW" style="grid-column:1/-1"><div class="fl">IBAN счёта карты — необязательно</div><label class="field"><input id="cIban" class="mono" type="text" maxlength="36" placeholder="UA… из квитанции, если там нет номера карты" autocomplete="off"></label></div>
     <div class="col"><div class="fl">Лимит отправки в мес.</div><label class="field"><input id="cOut" type="text" inputmode="decimal" placeholder="150 000" autocomplete="off"><span class="suf">₴</span></label></div>
     <div class="col"><div class="fl">Лимит получения</div><label class="field"><input id="cIn" type="text" inputmode="decimal" placeholder="не нужен" autocomplete="off"><span class="suf">₴</span></label></div>
   </div>
@@ -1415,6 +1416,7 @@ function FirebaseStore(db){
       un.push(db.collection('lphones').onSnapshot(function(s){ cb('phones', s.docs.map(function(d){ var o = d.data(); o.id = d.id; return o; })); }, function(e){ console.error(e); }));
       un.push(db.collection('pdeals').onSnapshot(function(s){ var mo = {}; s.docs.forEach(function(d){ mo[d.id] = (d.data() || {}).d || {}; }); cb('pdeals', mo); }, function(e){ console.error(e); }));
       un.push(db.collection('psettings').doc('main').onSnapshot(function(d){ cb('pset', d.exists ? d.data() : {}); }, function(e){ console.error(e); }));
+      un.push(db.collection('lbot').doc('ibanmap').onSnapshot(function(d){ cb('ibmap', d.exists ? d.data() : {}); }, function(e){ console.error(e); }));
       un.push(db.collection('lbot').doc('state').onSnapshot(function(d){ var o = d.exists ? d.data() : {}; delete o.orders; cb('bot', o); }, function(e){ console.error(e); }));
       return function(){ un.forEach(function(f){ f(); }); };
     },
@@ -1422,6 +1424,7 @@ function FirebaseStore(db){
     patch: function(c, id, p){ return db.collection(c).doc(id).update(clean(p)); },
     del: function(c, id){ return db.collection(c).doc(id).delete(); },
     setSettings: function(p){ return db.collection('lsettings').doc('main').set(p, {merge:true}); },
+    setIban: function(ib, cid){ var o = {}; o['ib_' + ib] = cid; return db.collection('lbot').doc('ibanmap').set(o, {merge:true}); },
     /* профит: сделки лежат по месяцам pdeals/2026-11 → {d: {id: сделка}} */
     putDeal: function(m, id, d){ var o = {}; o[id] = d; return db.collection('pdeals').doc(m).set({d:o}, {mergeFields:[new firebase.firestore.FieldPath('d', id)]}); },
     putMany: function(m, map){ return db.collection('pdeals').doc(m).set({d:map}, {merge:true}); },
@@ -2172,7 +2175,7 @@ function parseReceipt(raw){
     if (!/[а-яіїєґ]/.test(prev) && !/[а-яіїєґ]/.test(next)) return w;
     return w.replace(/[aceiopxykmthb]/g, function(ch){ return LAT[ch]; });
   });
-  var res = {cards:[], amount:0, date:null, text:t};
+  var res = {cards:[], amount:0, date:null, text:t, ibans:[]};
 
   /* направление: в каком блоке стоит номер карты — «Відправник» или «Одержувач» */
   var SEND = ['відправник','відправника','платник','платника','з картки','з карти','з рахунку','списано','отправитель','плательщик','с карты','со счета'];
@@ -2184,6 +2187,8 @@ function parseReceipt(raw){
     return iS > iR ? 'out' : 'in';
   }
 
+  /* IBAN (UA + 27 цифр, бывает с пробелами) — это счёт, а не карта: запоминаем отдельно и прячем от поиска карт */
+  t = t.replace(/UA(?:\s?\d){27}/gi, function(mm, pos){ res.ibans.push({iban:mm.replace(/\s/g, '').toUpperCase(), pos:pos, dir:dirAt(pos)}); return mm.replace(/./g, ' '); });
   /* номера карт: 444111******8588, 5375 41** **** 3333, *3333, 4441111048198117 */
   var seen = {};
   function addCand(first, l4, pos){
@@ -2312,8 +2317,14 @@ function guessCards(parsed){
   });
   return hits;
 }
+function ibanCard(ib){
+  var id = (S.ibmap || {})['ib_' + ib], c = id && byId(S.cards, id);
+  if (c) return c;
+  return S.cards.filter(function(x){ return String(x.iban || '').replace(/\s/g, '').toUpperCase() === ib || (x.fop && String(x.number || '').replace(/\s/g, '').toUpperCase() === ib); })[0] || null;
+}
 function matchCards(parsed){
   var hits = [], seenC = {};
+  (parsed.ibans || []).forEach(function(k){ var c = ibanCard(k.iban); if (c && !seenC[c.id + '|' + k.dir]){ var h = {c:c, dir:k.dir, score:5}; seenC[c.id + '|' + k.dir] = h; hits.push(h); } });
   parsed.cards.forEach(function(k){
     S.cards.forEach(function(c){
       var d = digits(c.number); if (!d || d.slice(-4) !== k.last4) return;
@@ -2401,6 +2412,7 @@ function openCard(c){
   fillPers();
   $('#cBank').value = c ? (c.bank || '') : ''; $('#cNum').value = c ? numDisp(c) : '';
   $('#cOut').value = c ? kopIn(c.limOut) : ''; $('#cIn').value = c ? kopIn(c.limIn) : '';
+  $('#cIban').value = c && c.iban ? ibanFmt(c.iban) : '';
   var cb = c ? cardBal(c) : null; CD.balWas = cb; $('#cBal').value = cb !== null ? kopIn(cb) : '';
   $('#dlHolders').innerHTML = holders().map(function(h){ return '<option value="' + esc(h[0]) + '">'; }).join('') + (holders().some(function(h){ return h[0] === ME; }) ? '' : '<option value="' + esc(ME) + '">');
   $('#cExtra').hidden = !c;
@@ -2421,6 +2433,7 @@ function syncCard(){
   var n = $('#cNum'); $('#cNumL').textContent = CD.fop ? 'IBAN счёта ФОП' : 'Номер карты';
   n.placeholder = CD.fop ? 'UA00 0000 0000 0000 0000 0000 0000 0' : '0000 0000 0000 0000'; n.maxLength = CD.fop ? 36 : 19; n.inputMode = CD.fop ? 'text' : 'numeric';
   if (!CD.id) $('#cTitle').textContent = CD.fop ? 'Новый счёт ФОП' : 'Новая карта';
+  $('#cIbanW').hidden = CD.fop;
   $('#cBal').placeholder = CD.fop ? 'Сколько денег на счёте' : 'Сколько денег на карте';
 }
 $('#cType').addEventListener('click', function(e){
@@ -2437,6 +2450,7 @@ function fillPers(){ var pr = personOf($('#cHolder').value); $('#cFio').value = 
 $('#cHolder').addEventListener('change', fillPers);
 $('#cInn').addEventListener('input', function(e){ var d = digits(e.target.value).slice(0, 10); if (d !== e.target.value) e.target.value = d; });
 $('#cStatus').addEventListener('click', function(e){ var b = e.target.closest('[data-cs]'); if (b){ CD.off = b.getAttribute('data-cs') === 'off'; syncCard(); } });
+$('#cIban').addEventListener('input', function(e){ var el = e.target, f = ibanFmt(ibanClean(el.value).slice(0, 29)); if (f !== el.value) el.value = f; });
 $('#cNum').addEventListener('input', function(e){ var el = e.target, f = CD && CD.fop ? ibanFmt(ibanClean(el.value).slice(0, 29)) : fmtCard(digits(el.value).slice(0, 16)); if (f !== el.value) el.value = f; });
 $('#cSave').addEventListener('click', function(){
   var holder = $('#cHolder').value.trim().slice(0, 30), bank = $('#cBank').value.trim().slice(0, 30), num = CD.fop ? ibanClean($('#cNum').value) : digits($('#cNum').value);
@@ -2452,7 +2466,9 @@ $('#cSave').addEventListener('click', function(){
   if ((fio || inn) && (fio !== (prv.fio || '') || inn !== (prv.inn || ''))) savePerson(holder, {fio:fio, inn:inn});
   var bv = $('#cBal').value.trim() ? parseMoney($('#cBal').value) : null;
   if (bv !== null && isNaN(bv)){ shake($('#cBal').parentNode); toast('Баланс впиши цифрами'); return; }
-  var d = {holder:holder, bank:bank, number:num, limOut:lo, limIn:li, off:CD.off, fop:CD.fop}, p;
+  var ibv = CD.fop ? '' : ibanClean($('#cIban').value);
+  if (ibv && !ibanOk(ibv)){ shake($('#cIban').parentNode); toast('IBAN: UA и 27 цифр'); return; }
+  var d = {holder:holder, bank:bank, number:num, limOut:lo, limIn:li, off:CD.off, fop:CD.fop, iban:ibv}, p;
   if (bv !== null && bv !== CD.balWas){ d.bal = bv; d.balTs = Date.now(); }
   if (CD.id) p = store.patch('lcards', CD.id, d); else { d.ts = Date.now(); p = store.put('lcards', uid(), d); }
   var okN = CD.fop || luhn(num), what = CD.fop ? 'Счёт ФОП' : 'Карта';
@@ -2761,6 +2777,8 @@ function shortWhy(o){ return 'Записано ' + money(o.partSum || 0) + ' и�
 /* привязать запись к ордеру: суммы копятся, записи не теряются */
 function textSig(t){ t = String(t || '').replace(/\s+/g, ' ').trim(); var h = 5381; for (var i = 0; i < t.length; i++) h = ((h * 33) ^ t.charCodeAt(i)) >>> 0; return h.toString(36) + t.length; }
 function linkToOrder(o, ids, sp, how, url){
+  // сервер не понял карту, но записал IBAN моей стороны квитанции — раз карту выбрали руками, связываем IBAN с ней навсегда
+  if (how === 'manual' && o.rdIban && sp && sp.card && store.setIban && (S.ibmap || {})['ib_' + o.rdIban] !== sp.card){ store.setIban(o.rdIban, sp.card).catch(function(e){ console.error(e); }); toast('Запомнил счёт ' + o.rdIban.slice(0, 4) + '…' + o.rdIban.slice(-4) + ' → эта карта. Дальше такие квитанции — сами', 3500); }
   var rc = (o.rcDone || []).slice(); if (url) rc.push(url);
   var patch = {rcSigs:o.rcSigs || [], partSum:(o.partSum || 0) + (sp ? sp.amount : 0), opIds:(o.opIds || []).concat(ids || []), rcDone:rc, card:sp ? sp.card : (o.card || null), doneAt:Date.now(), doneHow:how, done:true, need:false};
   Object.assign(o, patch);
@@ -3780,6 +3798,7 @@ function onData(c, list){
   if (c === 'orders'){ S.orders = (list || []).filter(function(o){ return o && o.orderId; }); queueRender(); setTimeout(processOrders, 0); return; }
   if (c === 'pdeals' || c === 'pset'){ PROF.onData(c, list); return; }
   if (c === 'phones'){ S.phones = list || []; if (S.view === 'warm' && S.ready.c && S.ready.o) queueRender(); return; }
+  if (c === 'ibmap'){ S.ibmap = list || {}; return; }
   if (c === 'bot'){ S.bot = list || {}; if (S.offline !== undefined && Date.now() - (S.offAt || 0) > 90000) S.offline = undefined; if (S.view === 'settings' || okxOn()) queueRender(); refreshAutoPanel(); return; }
   if (c === 'cards'){ S.cards = list.filter(function(k){ return k && typeof k === 'object'; }).sort(function(a, b){ return (a.ts || 0) - (b.ts || 0); }); S.ready.c = true; }
   else { S.ops = list.filter(function(o){ return o && typeof o.amount === 'number' && o.date && o.card; }); S.ready.o = true; }
