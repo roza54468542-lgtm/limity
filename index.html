@@ -931,6 +931,42 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
 </section>
 
 <!-- Автоторговля -->
+<section class="sheet" id="sGrp" role="dialog" aria-modal="true" aria-labelledby="grTitle">
+  <div class="grab"></div>
+  <div class="sh-h"><h3 id="grTitle">Группа заявок</h3><button class="x" data-close aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <button class="togrow" id="grOnT" type="button"><span>Автоплюс<span class="cnt">Робот ставит «+» с твоего аккаунта на подходящие заявки</span></span><span class="switch" id="grOnSw" role="switch" aria-checked="false"></span></button>
+  <div class="grid2">
+    <div class="col"><div class="fl">«Оплатить» — беру, если курс ≤</div><label class="field"><input id="grBuy" type="text" inputmode="decimal" placeholder="46,20" autocomplete="off"></label></div>
+    <div class="col"><div class="fl">«Принять» — беру, если курс ≥</div><label class="field"><input id="grSell" type="text" inputmode="decimal" placeholder="46,90" autocomplete="off"></label></div>
+  </div>
+  <div class="col"><div class="fl">Максимум одной заявки</div><label class="field"><input id="grMax" type="text" inputmode="decimal" placeholder="50 000" autocomplete="off"><span class="suf">₴</span></label></div>
+  <div class="grid2">
+    <div class="col"><div class="fl">Работает с</div><label class="field"><input id="grFrom" type="time" value="08:00"></label></div>
+    <div class="col"><div class="fl">до</div><label class="field"><input id="grTo" type="time" value="23:00"></label></div>
+  </div>
+  <div class="col"><div class="fl">От кого брать заявки</div><label class="field"><input id="grSenders" type="text" placeholder="пусто — от всех. Через запятую: Михаил, Олексій" autocomplete="off"></label></div>
+  <button class="togrow" id="grNtT" type="button"><span>Сообщать о пропущенных<span class="cnt">Курс подходит, но что-то помешало — пришлю в бот с кнопкой «Поставить + вручную»</span></span><span class="switch" id="grNtSw" role="switch" aria-checked="false"></span></button>
+  <p class="note" style="margin:0">Робот проверяет ещё: хватит ли денег и лимита отправки (для «Оплатить» — одной картой или частями, если в заявке написано «в 2 транзы»), а для «Принять» — есть ли карта со свободным лимитом получения и лимит отправки, чтобы потом закупиться. Пороги можно менять и в боте: «порог 46.2» / «порог принять 46.9».</p>
+  <p class="note" id="grRobot" style="margin:0"></p>
+  <button class="btn" id="grSave" type="button">Сохранить</button>
+</section>
+<section class="sheet" id="sDebt" role="dialog" aria-modal="true" aria-labelledby="dbTitle">
+  <div class="grab"></div>
+  <div class="sh-h"><h3 id="dbTitle">Долг</h3><button class="x" data-close aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="seg" id="dbDir" style="--n:2"><span class="ind"></span><button type="button" data-dd="owed">Мне должны</button><button type="button" data-dd="owe">Я должен</button></div>
+  <div class="col"><div class="fl">Кто</div><label class="field"><input id="dbWho" type="text" maxlength="40" placeholder="Имя или ник" autocomplete="off"></label></div>
+  <div class="grid2">
+    <div class="col"><div class="fl">Сумма, ₴</div><label class="field"><input id="dbUah" type="text" inputmode="decimal" placeholder="20 000" autocomplete="off"></label></div>
+    <div class="col"><div class="fl">Курс</div><label class="field"><input id="dbRate" type="text" inputmode="decimal" placeholder="46,20" autocomplete="off"></label></div>
+  </div>
+  <div class="col"><div class="fl">USDT</div><label class="field"><input id="dbUsdt" type="text" inputmode="decimal" placeholder="считается из суммы и курса" autocomplete="off"></label></div>
+  <div class="col" id="dbPaidW"><div class="fl" id="dbPaidL">Уже отдано, USDT</div><label class="field"><input id="dbPaid" type="text" inputmode="decimal" placeholder="0" autocomplete="off"></label></div>
+  <label class="field"><input id="dbNote" type="text" maxlength="80" placeholder="Комментарий" autocomplete="off"></label>
+  <p class="note" id="dbInfo" style="margin:0"></p>
+  <button class="btn" id="dbSave" type="button">Сохранить</button>
+  <button class="btn ghost" id="dbClose" type="button">Закрыть долг полностью</button>
+  <button class="btn ghost danger" id="dbDel" type="button">Удалить</button>
+</section>
 <section class="sheet" id="sAuto" role="dialog" aria-modal="true" aria-labelledby="auTitle">
   <div class="grab"></div>
   <div class="sh-h"><h3 id="auTitle">Автоторговля</h3><button class="x" data-close aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
@@ -1385,7 +1421,7 @@ function DemoStore(){
   if (!data.set) data.set = {auto:true};
   if (!data.orders) data.orders = []; if (!data.bot) data.bot = {};
   if (!data.pmonths){ var pd = PROF.demo(); data.pmonths = pd.months; data.pset = pd.set; }
-  function emit(){ subs.forEach(function(f){ f('cards', data.cards.slice()); f('ops', data.ops.slice()); f('set', Object.assign({}, data.set)); f('orders', data.orders.slice()); f('bot', Object.assign({}, data.bot)); f('pdeals', JSON.parse(JSON.stringify(data.pmonths))); f('pset', Object.assign({}, data.pset)); }); }
+  function emit(){ subs.forEach(function(f){ f('cards', data.cards.slice()); f('ops', data.ops.slice()); f('set', Object.assign({}, data.set)); f('orders', data.orders.slice()); f('bot', Object.assign({}, data.bot)); f('debts', JSON.parse(JSON.stringify(data.debts || {}))); f('pdeals', JSON.parse(JSON.stringify(data.pmonths))); f('pset', Object.assign({}, data.pset)); }); }
   function save(){ try { localStorage.setItem(KEY, JSON.stringify(data)); } catch(e){} setTimeout(emit, 0); return Promise.resolve(); }
   function col(c){ return c === 'lcards' ? data.cards : c === 'lorders' ? data.orders : data.ops; }
   function idx(a, id){ for (var i = 0; i < a.length; i++) if (a[i].id === id) return i; return -1; }
@@ -1395,6 +1431,8 @@ function DemoStore(){
     patch: function(c, id, p){ var a = col(c), i = idx(a, id); if (i > -1) Object.assign(a[i], p); return save(); },
     del: function(c, id){ var a = col(c), i = idx(a, id); if (i > -1) a.splice(i, 1); return save(); },
     setSettings: function(p){ Object.assign(data.set, p); return save(); },
+    debtSet: function(id, o){ data.debts = data.debts || {}; data.debts[id] = Object.assign({}, data.debts[id] || {}, o); return save(); },
+    debtDel: function(id){ if (data.debts) delete data.debts[id]; return save(); },
     putDeal: function(m, id, d){ (data.pmonths[m] = data.pmonths[m] || {})[id] = d; return save(); },
     putMany: function(m, map){ data.pmonths[m] = Object.assign(data.pmonths[m] || {}, map); return save(); },
     delDeal: function(m, id){ if (data.pmonths[m]) delete data.pmonths[m][id]; return save(); },
@@ -1416,6 +1454,8 @@ function FirebaseStore(db){
       un.push(db.collection('lphones').onSnapshot(function(s){ cb('phones', s.docs.map(function(d){ var o = d.data(); o.id = d.id; return o; })); }, function(e){ console.error(e); }));
       un.push(db.collection('pdeals').onSnapshot(function(s){ var mo = {}; s.docs.forEach(function(d){ mo[d.id] = (d.data() || {}).d || {}; }); cb('pdeals', mo); }, function(e){ console.error(e); }));
       un.push(db.collection('psettings').doc('main').onSnapshot(function(d){ cb('pset', d.exists ? d.data() : {}); }, function(e){ console.error(e); }));
+      un.push(db.collection('lbot').doc('debts').onSnapshot(function(d){ cb('debts', ((d.exists ? d.data() : {}) || {}).d || {}); }, function(e){ console.error(e); }));
+      un.push(db.collection('lbot').doc('grp').onSnapshot(function(d){ var o = d.exists ? d.data() : {}; cb('grp', {robotAt:o.robotAt || 0, seenAt:o.seenAt || 0}); }, function(e){ console.error(e); }));
       un.push(db.collection('lbot').doc('ibanmap').onSnapshot(function(d){ cb('ibmap', d.exists ? d.data() : {}); }, function(e){ console.error(e); }));
       un.push(db.collection('lbot').doc('state').onSnapshot(function(d){ var o = d.exists ? d.data() : {}; delete o.orders; cb('bot', o); }, function(e){ console.error(e); }));
       return function(){ un.forEach(function(f){ f(); }); };
@@ -1424,6 +1464,8 @@ function FirebaseStore(db){
     patch: function(c, id, p){ return db.collection(c).doc(id).update(clean(p)); },
     del: function(c, id){ return db.collection(c).doc(id).delete(); },
     setSettings: function(p){ return db.collection('lsettings').doc('main').set(p, {merge:true}); },
+    debtSet: function(id, o){ var d = {}; d[id] = o; return db.collection('lbot').doc('debts').set({d:d}, {merge:true}); },
+    debtDel: function(id){ return db.collection('lbot').doc('debts').update(new firebase.firestore.FieldPath('d', id), firebase.firestore.FieldValue.delete()); },
     setIban: function(ib, cid){ var o = {}; o['ib_' + ib] = cid; return db.collection('lbot').doc('ibanmap').set(o, {merge:true}); },
     /* профит: сделки лежат по месяцам pdeals/2026-11 → {d: {id: сделка}} */
     putDeal: function(m, id, d){ var o = {}; o[id] = d; return db.collection('pdeals').doc(m).set({d:o}, {mergeFields:[new firebase.firestore.FieldPath('d', id)]}); },
@@ -3275,14 +3317,91 @@ var IC_SELL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
 /* ============ состояние ============ */
 
 var CALC = null, CALC_KEY = '';
+/* ===== Долги USDT (группа заявок + вручную) ===== */
+function u3(v){ return (Math.round((v || 0) * 1000) / 1000).toLocaleString('ru-RU', {minimumFractionDigits:0, maximumFractionDigits:3}); }
+function debtLeft(x){ return Math.max(0, Math.round(((x.usdt || 0) - (x.paid || 0)) * 1000) / 1000); }
+function debtsHtml(){
+  var d = S.debts || {}, ids = Object.keys(d).filter(function(k){ return d[k] && d[k].status !== 'cancelled'; });
+  var open = ids.filter(function(k){ return d[k].status !== 'closed' && debtLeft(d[k]) > 0; }), closed = ids.filter(function(k){ return open.indexOf(k) < 0; });
+  var sum = function(dir){ return open.filter(function(k){ return d[k].dir === dir; }).reduce(function(a, k){ return a + debtLeft(d[k]); }, 0); };
+  var owed = sum('owed'), owe = sum('owe');
+  var g = S.grp || {}, robot = g.robotAt ? Date.now() - g.robotAt < 180000 : null;
+  var h = '<section class="card"><div class="kv"><span>Мне должны</span><b style="color:var(--ok)">' + u3(owed) + ' USDT</b></div><div class="kv"><span>Я должен</span><b style="color:var(--danger)">' + u3(owe) + ' USDT</b></div>' +
+    '<div class="kv"><span>Итого</span><b>' + (owed - owe >= 0 ? '+' : '−') + u3(Math.abs(owed - owe)) + ' USDT</b></div>' +
+    '<div class="stack" style="margin-top:10px;flex-direction:row;gap:8px"><button class="btn ghost sm" data-pact="newdebt">+ Добавить долг</button><button class="btn ghost sm" data-pact="grpcfg">Автоплюс в группе' + ((S.set && S.set.grp && S.set.grp.on) ? ' · вкл' : '') + '</button></div>' +
+    (robot === false ? '<p class="note" style="color:var(--warn);margin-bottom:0">Робот в группе не выходил на связь ' + Math.round((Date.now() - g.robotAt) / 60000) + ' мин.</p>' : '') + '</section>';
+  function row(k){ var x = d[k], left = debtLeft(x), cl = x.status === 'closed' || left <= 0;
+    return '<button class="op" data-debt="' + esc(k) + '"' + (cl ? ' style="opacity:.55"' : '') + '><span class="oic ' + (x.dir === 'owed' ? 'in' : 'out') + '">' + (x.dir === 'owed' ? ARR_IN : ARR_OUT) + '</span><span class="mid"><span class="t1">' + esc(x.who || 'Без имени') + (x.src === 'group' ? ' · группа' : '') + '</span><span class="t2">' +
+      esc((x.uah ? money(x.uah, true) + (x.rate ? ' по ' + String(x.rate).replace('.', ',') : '') + ' · ' : '') + dayLabel(kyiv(x.at || Date.now()).day) + (x.paid > 0 && !cl ? ' · отдано ' + u3(x.paid) : '') + (cl ? ' · закрыт' : '')) + '</span></span><span class="sum' + (x.dir === 'owed' ? ' in' : '') + '">' + u3(cl ? x.usdt : left) + ' USDT</span></button>'; }
+  var srt = function(a, b){ return (d[b].at || 0) - (d[a].at || 0); };
+  ['owed', 'owe'].forEach(function(dir){
+    var l = open.filter(function(k){ return d[k].dir === dir; }).sort(srt);
+    if (l.length) h += '<section class="card" style="padding-block:6px"><h2 style="margin:10px 0 4px">' + (dir === 'owed' ? 'Мне должны USDT' : 'Я должен USDT') + '</h2>' + l.map(row).join('') + '</section>';
+  });
+  if (!open.length) h += '<section class="card"><div class="empty">Открытых долгов нет. Когда робот поставит «+» в группе, долг появится здесь сам.</div></section>';
+  if (closed.length) h += '<section class="card" style="padding-block:6px"><h2 style="margin:10px 0 4px">Закрытые</h2>' + closed.sort(srt).slice(0, 30).map(row).join('') + '</section>';
+  return h;
+}
+var DB = null;
+function openDebt(id){
+  var x = id ? (S.debts || {})[id] : null;
+  DB = {id:id || null, dir:x ? x.dir : 'owed'};
+  $('#dbTitle').textContent = x ? (x.who || 'Долг') : 'Новый долг';
+  $('#dbWho').value = x ? x.who || '' : ''; $('#dbUah').value = x && x.uah ? kopIn(x.uah) : ''; $('#dbRate').value = x && x.rate ? String(x.rate).replace('.', ',') : '';
+  $('#dbUsdt').value = x ? String(x.usdt || '').replace('.', ',') : ''; $('#dbPaid').value = x && x.paid ? String(x.paid).replace('.', ',') : ''; $('#dbNote').value = x ? x.note || '' : '';
+  $('#dbInfo').textContent = x && x.text ? 'Заявка: ' + x.text.replace(/\s+/g, ' ') + (x.method ? ' · ' + x.method : '') : '';
+  $('#dbDel').hidden = !x; $('#dbClose').hidden = !x || x.status === 'closed'; $('#dbDel').classList.remove('armed'); $('#dbDel').textContent = 'Удалить';
+  syncDebt(); openSheet('sDebt');
+}
+function syncDebt(){ setSeg($('#dbDir'), DB.dir === 'owe' ? 1 : 0); pressSet($('#dbDir'), 'data-dd', DB.dir); $('#dbPaidL').textContent = DB.dir === 'owed' ? 'Уже получено, USDT' : 'Уже отдано, USDT'; $('#dbClose').textContent = DB.dir === 'owed' ? 'Получил всё — закрыть' : 'Отдал всё — закрыть'; }
+function numIn(v){ var n = parseFloat(String(v || '').replace(/\s/g, '').replace(',', '.')); return isNaN(n) ? 0 : n; }
+$('#dbDir').addEventListener('click', function(e){ var b = e.target.closest('[data-dd]'); if (!b) return; DB.dir = b.getAttribute('data-dd'); syncDebt(); });
+['#dbUah', '#dbRate'].forEach(function(s){ $(s).addEventListener('input', function(){ var u = parseMoney($('#dbUah').value), r = numIn($('#dbRate').value); if (u > 0 && r > 0) $('#dbUsdt').value = String(Math.floor(u / 100 / r * 1000) / 1000).replace('.', ','); }); });
+$('#dbSave').addEventListener('click', function(){
+  var who = $('#dbWho').value.trim(), usdt = numIn($('#dbUsdt').value), paid = numIn($('#dbPaid').value), uah = $('#dbUah').value.trim() ? parseMoney($('#dbUah').value) : 0, rate = numIn($('#dbRate').value);
+  if (!who){ shake($('#dbWho').parentNode); toast('Впиши, кто'); return; }
+  if (!(usdt > 0)){ shake($('#dbUsdt').parentNode); toast('Впиши USDT (или сумму и курс)'); return; }
+  var old = DB.id ? (S.debts || {})[DB.id] || {} : {}, id = DB.id || ('m' + Date.now().toString(36));
+  var o = Object.assign({}, old, {who:who, dir:DB.dir, usdt:Math.round(usdt * 1000) / 1000, paid:Math.round(paid * 1000) / 1000, uah:uah, rate:rate, note:$('#dbNote').value.trim(), at:old.at || Date.now(), src:old.src || 'manual'});
+  o.status = o.paid >= o.usdt - 0.0005 ? 'closed' : 'open';
+  S.debts = Object.assign({}, S.debts, (function(){ var z = {}; z[id] = o; return z; })());
+  store.debtSet(id, o).catch(dbErr); toast('Сохранено'); closeSheet(); render();
+});
+$('#dbClose').addEventListener('click', function(){ var x = (S.debts || {})[DB.id]; if (!x) return; x = Object.assign({}, x, {paid:x.usdt, status:'closed', closedAt:Date.now()}); S.debts[DB.id] = x; store.debtSet(DB.id, x).catch(dbErr); toast('Долг закрыт'); closeSheet(); render(); });
+$('#dbDel').addEventListener('click', function(){ if (!arm($('#dbDel'), 'Удалить? Уйдёт и из профита')) return; var id = DB.id; delete S.debts[id]; store.debtDel(id).catch(dbErr); toast('Удалено'); closeSheet(); render(); });
+/* настройки автоплюса в группе */
+var GR = null;
+function openGrp(){
+  var g = Object.assign({on:false, notify:true, from:'08:00', to:'23:00'}, (S.set || {}).grp || {});
+  GR = {on:!!g.on, notify:g.notify !== false};
+  $('#grBuy').value = g.buyMax ? String(g.buyMax).replace('.', ',') : ''; $('#grSell').value = g.sellMin ? String(g.sellMin).replace('.', ',') : '';
+  $('#grMax').value = g.maxAmt ? kopIn(g.maxAmt) : ''; $('#grFrom').value = g.from; $('#grTo').value = g.to; $('#grSenders').value = (g.senders || []).join(', ');
+  var r = S.grp || {}; $('#grRobot').textContent = r.robotAt ? (Date.now() - r.robotAt < 180000 ? '🟢 Робот в группе на связи' : '🔴 Робот не выходил на связь ' + Math.round((Date.now() - r.robotAt) / 60000) + ' мин') : 'Робот в группе ещё не подключён.';
+  syncGrp(); openSheet('sGrp');
+}
+function syncGrp(){ $('#grOnSw').setAttribute('aria-checked', String(GR.on)); $('#grNtSw').setAttribute('aria-checked', String(GR.notify)); }
+$('#grOnT').addEventListener('click', function(){ GR.on = !GR.on; syncGrp(); });
+$('#grNtT').addEventListener('click', function(){ GR.notify = !GR.notify; syncGrp(); });
+$('#grSave').addEventListener('click', function(){
+  var g = {on:GR.on, notify:GR.notify, buyMax:numIn($('#grBuy').value) || 0, sellMin:numIn($('#grSell').value) || 0, maxAmt:$('#grMax').value.trim() ? parseMoney($('#grMax').value) : 0,
+    from:$('#grFrom').value || '00:00', to:$('#grTo').value || '23:59', senders:$('#grSenders').value.split(',').map(function(x){ return x.trim(); }).filter(Boolean).slice(0, 30)};
+  if (g.buyMax && (g.buyMax < 30 || g.buyMax > 70) || g.sellMin && (g.sellMin < 30 || g.sellMin > 70)){ toast('Курс впиши как 46,20'); return; }
+  S.set = Object.assign({}, S.set, {grp:g}); store.setSettings({grp:g}).catch(dbErr); toast(g.on ? 'Автоплюс включён' : 'Сохранено'); closeSheet(); render();
+});
 function opDeals(){   // ручные записи «Лимитов» с курсом: получение = продажа, отправка = покупка
   return (S.ops || []).filter(function(o){ return o.rate > 0 && o.amount > 0 && o.date && o.kind !== 'xfer' && (o.dir === 'in' || o.dir === 'out'); }).map(function(o){
     var t = o.ts && kyiv(o.ts).day === o.date ? o.ts : new Date(o.date + 'T12:00:00').getTime(), c = byId(S.cards, o.card);
     return {id:'op_' + o.id, s:o.dir === 'in' ? 's' : 'b', u:o.amount, q:o.amount / o.rate, t:t, c:o.note || (c ? (c.holder || '') + ' · ' + c.bank + (c.fop ? ' ФОП' : '') : ''), src:'op', g:'Запись', m:kyiv(t).day.slice(0, 7)};
   });
 }
+function debtDeals(){   // группа заявок: «мне должны USDT» = я купил USDT, «я должен USDT» = я продал
+  var d = S.debts || {};
+  return Object.keys(d).map(function(id){ var x = d[id]; if (!x || !(x.rate > 0) || !(x.usdt > 0) || x.status === 'cancelled') return null;
+    return {id:'db_' + id, s:x.dir === 'owed' ? 'b' : 's', u:x.uah, q:x.usdt, t:x.at || Date.now(), c:(x.who || '') + (x.text ? ' · ' + x.text.replace(/\s+/g, ' ').slice(0, 40) : ''), src:'op', g:'Группа', m:kyiv(x.at || Date.now()).day.slice(0, 7)};
+  }).filter(Boolean);
+}
 function allDeals(){
-  var out = opDeals();
+  var out = opDeals().concat(debtDeals());
   Object.keys(PS.months).forEach(function(m){ var d = PS.months[m] || {}; Object.keys(d).forEach(function(id){ var x = d[id]; if (x && typeof x === 'object'){ var o = Object.assign({}, x); o.id = id; o.m = m; out.push(o); } }); });
   return out;
 }
@@ -3292,7 +3411,7 @@ function calc(){
   // комиссии банков (записи «Лимитов» с полем fee) вычитаются из профита своего дня
   var fees = {}, fsum = 0;
   (S.ops || []).forEach(function(o){ if (o.fee > 0 && o.date){ fees[o.date] = (fees[o.date] || 0) + o.fee; fsum += o.fee; } });
-  var opk = opDeals().map(function(d){ return d.id + d.u + '/' + d.q + '@' + d.t; }).join(',');
+  var opk = opDeals().concat(debtDeals()).map(function(d){ return d.id + d.u + '/' + d.q + '@' + d.t; }).join(',');
   var key = JSON.stringify([Object.keys(PS.months).map(function(m){ return m + ':' + Object.keys(PS.months[m] || {}).length; }), PS.ver || 0, PS.set.start || null, fsum, Object.keys(fees).length, opk]);
   if (CALC && key === CALC_KEY) return CALC;
   CALC = computeProfit(allDeals(), startBal());
@@ -3730,10 +3849,11 @@ function peopleHtml(m){
 }
 
 function view(){
-  var subs = [['today','Сегодня'],['stats','Статистика'],['deals','Сделки']], ix = 0; subs.forEach(function(x, i){ if (x[0] === PS.view) ix = i; });
-  var h = '<div class="seg" style="--n:3"><span class="ind" style="--idx:' + ix + '"></span>' + subs.map(function(x){ return '<button data-psub="' + x[0] + '" aria-pressed="' + (x[0] === PS.view) + '">' + x[1] + '</button>'; }).join('') + '</div>';
+  var subs = [['today','Сегодня'],['stats','Статистика'],['deals','Сделки'],['debts','Долги']], ix = 0; subs.forEach(function(x, i){ if (x[0] === PS.view) ix = i; });
+  var h = '<div class="seg" style="--n:4"><span class="ind" style="--idx:' + ix + '"></span>' + subs.map(function(x){ return '<button data-psub="' + x[0] + '" aria-pressed="' + (x[0] === PS.view) + '">' + x[1] + '</button>'; }).join('') + '</div>';
   if (PS.view === 'stats'){ var st = vStats(); var cut = st.indexOf('<div class="p-two"><section class="card"><h2>Контрагенты'); h += cut > -1 ? st.slice(0, cut) + peopleHtml(PS.month) + st.slice(cut) : st + peopleHtml(PS.month); }
   else if (PS.view === 'deals') h += vDeals();
+  else if (PS.view === 'debts') h += debtsHtml();
   else h += vHome();
   return h;
 }
@@ -3763,15 +3883,18 @@ function click(e){
   if (bi && !bi.closest('.sheet') && $('#dChart')){ var ch = $('#dChart'); var dd = PS.month + '-' + pad2(+bi.getAttribute('data-bi')), g = calc().byDay[dd] || emptyDay(dd); $('#dTip').innerHTML = dayTip(g); ch.classList.add('has-sel'); ch.querySelectorAll('.bm').forEach(function(p){ p.classList.toggle('sel', p.getAttribute('data-bi') === bi.getAttribute('data-bi')); }); return true; }
   var hiE = e.target.closest('[data-hi]');
   if (hiE && HOURS_CACHE && $('#hChart')){ var x = HOURS_CACHE.hrs[+hiE.getAttribute('data-hi')]; $('#hTip').innerHTML = hourTip(x, HOURS_CACHE.key); var hc = $('#hChart'); hc.classList.add('has-sel'); hc.querySelectorAll('.bm').forEach(function(p){ p.classList.toggle('sel', p.getAttribute('data-hi') === hiE.getAttribute('data-hi')); }); return true; }
-  var t = e.target.closest('[data-psub],[data-deal],[data-pm],[data-df],[data-ss],[data-hb],[data-pact]');
+  var t = e.target.closest('[data-psub],[data-deal],[data-pm],[data-df],[data-ss],[data-hb],[data-pact],[data-debt]');
   if (!t || t.closest('.sheet')) return false;
   if (t.hasAttribute('data-psub')){ PS.view = t.getAttribute('data-psub'); PS.dealLim = 25; if (S.view !== 'profit'){ S.view = 'profit'; window.scrollTo(0, 0); render(true); } else rr(); return true; }
-  if (t.hasAttribute('data-deal')){ var di = t.getAttribute('data-deal'); if (/^op_/.test(di)){ var oo = byId(S.ops, di.slice(3)); if (oo) openOp(oo); return true; } var d = findDeal(di); if (d) openDeal(d); return true; }
+  if (t.hasAttribute('data-deal')){ var di = t.getAttribute('data-deal'); if (/^op_/.test(di)){ var oo = byId(S.ops, di.slice(3)); if (oo) openOp(oo); return true; } if (/^db_/.test(di)){ openDebt(di.slice(3)); return true; } var d = findDeal(di); if (d) openDeal(d); return true; }
   if (t.hasAttribute('data-pm')){ if (t.disabled) return true; PS.month = shiftMonth(PS.month, +t.getAttribute('data-pm')); PS.dealLim = 25; rr(); return true; }
   if (t.hasAttribute('data-df')){ PS.dealF = t.getAttribute('data-df'); rr(); return true; }
   if (t.hasAttribute('data-ss')){ PS.statSort = t.getAttribute('data-ss'); rr(); return true; }
   if (t.hasAttribute('data-hb')){ PS.hourBy = t.getAttribute('data-hb'); rr(); return true; }
+  if (t.hasAttribute('data-debt')){ openDebt(t.getAttribute('data-debt')); return true; }
   var a = t.getAttribute('data-pact');
+  if (a === 'newdebt'){ openDebt(null); return true; }
+  if (a === 'grpcfg'){ openGrp(); return true; }
   if (a === 'goals'){ openGoals(); return true; }
   if (a === 'start'){ openStart(); return true; }
   if (a === 'okx'){ go('settings'); return true; }
@@ -3799,6 +3922,8 @@ function onData(c, list){
   if (c === 'pdeals' || c === 'pset'){ PROF.onData(c, list); return; }
   if (c === 'phones'){ S.phones = list || []; if (S.view === 'warm' && S.ready.c && S.ready.o) queueRender(); return; }
   if (c === 'ibmap'){ S.ibmap = list || {}; return; }
+  if (c === 'debts'){ S.debts = list || {}; queueRender(); return; }
+  if (c === 'grp'){ S.grp = list || {}; return; }
   if (c === 'bot'){ S.bot = list || {}; if (S.offline !== undefined && Date.now() - (S.offAt || 0) > 90000) S.offline = undefined; if (S.view === 'settings' || okxOn()) queueRender(); refreshAutoPanel(); return; }
   if (c === 'cards'){ S.cards = list.filter(function(k){ return k && typeof k === 'object'; }).sort(function(a, b){ return (a.ts || 0) - (b.ts || 0); }); S.ready.c = true; }
   else { S.ops = list.filter(function(o){ return o && typeof o.amount === 'number' && o.date && o.card; }); S.ready.o = true; }
