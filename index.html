@@ -426,6 +426,13 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
 .prog{height:4px;border-radius:var(--r-bar);background:var(--bg);overflow:hidden;margin-top:4px}
 .prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
 .queue{font-size:12.5px;color:var(--muted);font-weight:600}
+.circ{padding:10px 0;border-top:1px solid var(--line)}
+.circ:first-of-type{border-top:0}
+.circ .ct{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.circ .ct span{font-size:13px;color:var(--muted)}
+.circ .cbar{height:6px;border-radius:4px;background:var(--surface-2);margin:7px 0;overflow:hidden}
+.circ .cbar i{display:block;height:100%;background:var(--ok);border-radius:4px}
+.circ .cs,.card .cs{font-size:13px;color:var(--muted);line-height:1.45}
 .splt{display:flex;flex-direction:column;gap:8px}
 .splt .sr{display:grid;grid-template-columns:minmax(0,1fr) 112px 36px;gap:6px;align-items:center}
 .splt .sr .field{height:46px}
@@ -3279,6 +3286,72 @@ function computeProfit(deals, start){
   });
   return {days:days, byDay:byDay, sale:sale, rest:{q:q, avg:q > 0 ? avg : null}, deals:act};
 }
+/* ===== «Кола»: профит каждой продажи считается по покупкам, которые её «закрыли» =====
+   · каждый день с продажами открывает коло объёмом в весь проданный за день USDT;
+   · покупки льются сначала в самое старое незакрытое коло (даже вчерашнее), потом в сегодняшнее; лишнее — в запас,
+     который первым доливает следующее коло;
+   · покупка, которая не влезла целиком, делится пропорционально (и USDT, и гривны);
+   · коло закрыто, когда налито столько, сколько продано (±0,01); закрытое вручную не принимает покупки позже момента закрытия;
+   · новый месяц — новые кола: незакрытые кола и запас прошлого месяца не переходят;
+   · профит дня = продано × (средняя продажи − средняя покупки ЕГО кола); пока в коле нет покупок — профит пустой («ждёт закупа»).
+   deals: [{id, s:'b'|'s', q, u, t, day}], opts: {closed: {день: ts}} */
+function computeCircles(deals, opts) {
+  opts = opts || {};
+  var closed = opts.closed || {}, EPS = 0.01;
+  var act = deals.filter(function (d) { return d && !d.off && d.q > 0 && d.u > 0 && d.t && d.day; }).slice().sort(function (a, b) { return a.t - b.t; });
+  var byDay = {}, days = [];
+  act.forEach(function (d) { var g = byDay[d.day]; if (!g) { g = byDay[d.day] = { day: d.day, buys: [], sells: [] }; days.push(g); } (d.s === 'b' ? g.buys : g.sells).push(d); });
+  days.sort(function (a, b) { return a.day < b.day ? -1 : 1; });
+  var circles = [], open = [], carry = [], month = null;
+  function room(c) { return c.sQ - c.bQ; }
+  function canTake(c, t) { return room(c) > EPS && !(c.closeTs && t > c.closeTs); }
+  function pour(c, chunk, t) {                     // налить кусок в коло, вернуть остаток куска
+    var r = room(c); if (r <= EPS || chunk.q <= 0) return chunk;
+    var take = Math.min(r, chunk.q), k = take / chunk.q, u = chunk.u * k;
+    c.bQ += take; c.bU += u; c.parts.push({ id: chunk.id, q: take, u: u, t: t });
+    return { id: chunk.id, q: chunk.q - take, u: chunk.u - u };
+  }
+  function pourAll(chunk, t) {
+    for (var i = 0; i < open.length && chunk.q > 1e-9; i++) if (canTake(open[i], t)) chunk = pour(open[i], chunk, t);
+    open = open.filter(function (c) { return room(c) > EPS; });
+    return chunk;
+  }
+  days.forEach(function (g) {
+    var m = g.day.slice(0, 7);
+    if (m !== month) { open.forEach(function (c) { c.monthEnded = true; }); open = []; carry = []; month = m; }   // новый месяц — новые кола
+    var sQ = 0, sU = 0; g.sells.forEach(function (d) { sQ += d.q; sU += d.u; });
+    var c = null;
+    if (sQ > 0) {
+      c = { day: g.day, sQ: sQ, sU: sU, bQ: 0, bU: 0, parts: [], closeTs: closed[g.day] || 0 };
+      circles.push(c); open.push(c);
+      var left = [];                                 // запас — первым в новое коло
+      carry.forEach(function (ch) { ch = pour(c, ch, ch.t || 0); if (ch.q > 1e-9) left.push(ch); });
+      carry = left; open = open.filter(function (x) { return room(x) > EPS; });
+    }
+    g.buys.forEach(function (d) { var rest = pourAll({ id: d.id, q: d.q, u: d.u }, d.t); if (rest.q > 1e-9) { rest.t = d.t; carry.push(rest); } });
+    g.circle = c;
+  });
+  // итоги по дням и продажам
+  var sale = {}, outDays = [];
+  days.forEach(function (g) {
+    var c = g.circle, bU = 0, bQ = 0; g.buys.forEach(function (d) { bU += d.u; bQ += d.q; });
+    var o = { day: g.day, buys: g.buys, sells: g.sells, bU: bU, bQ: bQ, sU: c ? c.sU : 0, sQ: c ? c.sQ : 0, n: g.buys.length + g.sells.length };
+    o.avgBuyDay = bQ > 0 ? bU / bQ : null; o.avgSell = c ? c.sU / c.sQ : null;
+    o.cost = c && c.bQ > 0 ? c.bU / c.bQ : null;
+    o.noCost = !!c && c.bQ <= 0;
+    o.profit = c && c.bQ > 0 ? c.sU - c.sQ * o.cost : 0;
+    o.spread = o.cost !== null && o.avgSell !== null ? o.avgSell - o.cost : null;
+    o.spreadPct = o.spread !== null && o.cost ? o.spread / o.cost : null;
+    o.over = 0;
+    if (c) { c.fill = Math.min(1, c.bQ / c.sQ); c.done = room(c) <= EPS; c.avgBuy = o.cost; c.avgSell = o.avgSell; c.profit = o.profit; c.need = Math.max(0, c.sQ - c.bQ); }
+    g.sells.forEach(function (d) { sale[d.id] = o.cost !== null ? d.u - o.cost * d.q : null; });
+    outDays.push(o);
+  });
+  var cq = 0, cu = 0; carry.forEach(function (ch) { cq += ch.q; cu += ch.u; });
+  outDays.forEach(function (o, i) { o.restQ = i === outDays.length - 1 ? cq : null; o.restAvg = i === outDays.length - 1 && cq > 0 ? cu / cq : null; });
+  return { days: outDays, byDay: outDays.reduce(function (a, o) { a[o.day] = o; return a; }, {}), sale: sale, rest: { q: cq, avg: cq > 0 ? cu / cq : null }, circles: circles, open: open };
+}
+function circMode(){ return PS.set.mode !== 'avg'; }   // по умолчанию — кола
 function sumDays(list){
   var r = {profit:0, bU:0, bQ:0, sU:0, sQ:0, n:0, days:list.length, plus:0, minus:0, best:null, worst:null, over:0, noCost:0};
   list.forEach(function(g){
@@ -3412,9 +3485,12 @@ function calc(){
   var fees = {}, fsum = 0;
   (S.ops || []).forEach(function(o){ if (o.fee > 0 && o.date){ fees[o.date] = (fees[o.date] || 0) + o.fee; fsum += o.fee; } });
   var opk = opDeals().concat(debtDeals()).map(function(d){ return d.id + d.u + '/' + d.q + '@' + d.t; }).join(',');
-  var key = JSON.stringify([Object.keys(PS.months).map(function(m){ return m + ':' + Object.keys(PS.months[m] || {}).length; }), PS.ver || 0, PS.set.start || null, fsum, Object.keys(fees).length, opk]);
+  var key = JSON.stringify([Object.keys(PS.months).map(function(m){ return m + ':' + Object.keys(PS.months[m] || {}).length; }), PS.ver || 0, PS.set.start || null, fsum, Object.keys(fees).length, opk, PS.set.mode || '', PS.set.closed || null]);
   if (CALC && key === CALC_KEY) return CALC;
-  CALC = computeProfit(allDeals(), startBal());
+  if (circMode()){
+    var acts = allDeals().filter(function(d){ return d && !d.off && d.q > 0 && d.u > 0 && d.t; }).map(function(d){ var k = kyiv(d.t); return {id:d.id, s:d.s, q:d.q, u:d.u, t:d.t, c:d.c || '', src:d.src, day:k.day, hour:k.hour}; });
+    CALC = computeCircles(acts, {closed:PS.set.closed || {}}); CALC.deals = acts.sort(function(a, b){ return a.t - b.t; });
+  } else CALC = computeProfit(allDeals(), startBal());
   CALC.days.forEach(function(g){ g.fee = fees[g.day] || 0; g.gross = g.profit; g.profit = g.profit - g.fee; });
   // день с комиссиями, но без сделок — тоже минус
   Object.keys(fees).forEach(function(d){ if (!CALC.byDay[d]){ var g = emptyDay(d); g.fee = fees[d]; g.gross = 0; g.profit = -fees[d]; CALC.byDay[d] = g; CALC.days.push(g); } });
@@ -3514,7 +3590,30 @@ function syncCard(){
   if (cfg && !PS.set.histDone) return '<section class="card"><h2>История OKX</h2><p class="note" style="margin:0 0 10px">Загружу твои ордера за 6 месяцев, чтобы посчитать среднюю цену остатка и профит по дням.</p><button class="btn sm" data-pact="import">Загрузить историю</button></section>';
   return '';
 }
+function circWarn(list){
+  var wait = list.filter(function(g){ return g.noCost; });
+  return wait.length ? '<div class="warn"><span><b>Ждут закупа</b> ' + wait.length + ' ' + plural(wait.length, 'коло', 'кола', 'кол') + ': продано, а покупок под них ещё нет — профит появится, как докупишь.</span></div>' : '';
+}
+function circleCard(c){
+  var closedMan = !!(PS.set.closed || {})[c.day], need = c.done ? 0 : c.need, pctF = Math.round(c.fill * 100);
+  var st = c.done ? '<span class="pos">закрыто</span>' : closedMan ? '<span>закрыто вручную</span>' : c.monthEnded ? '<span class="neg">месяц кончился, коло не закрылось</span>' : pctF + '%';
+  return '<div class="circ"><div class="ct"><b>' + esc(shortDate(c.day)) + '</b><span>' + st + '</span><b class="' + (c.bQ > 0 ? pnlCls(c.profit) : '') + '">' + (c.bQ > 0 ? signed(c.profit, true) : 'ждёт закупа') + '</b></div>' +
+    '<div class="cbar"><i style="width:' + Math.min(100, pctF) + '%"></i></div>' +
+    '<div class="cs">Продано ' + usdtS(c.sQ) + ' по ' + price(c.avgSell) + ' · закуплено ' + usdtS(c.bQ) + (c.bQ > 0 ? ' по ' + price(c.avgBuy) + ' · зазор ' + price(c.avgSell - c.avgBuy) : '') + '</div>' +
+    (need > 0.01 && !closedMan && !c.monthEnded ? '<div class="cs">Чтобы закрыть: докупить ' + usdtS(need) + (c.avgBuy ? ' ≈ ' + moneyS(need * c.avgBuy) : '') + ' · <button class="link" data-pact="cclose" data-cday="' + c.day + '">закрыть без докупа</button></div>' : '') +
+    (closedMan ? '<div class="cs"><button class="link" data-pact="copen" data-cday="' + c.day + '">открыть коло снова</button></div>' : '') + '</div>';
+}
+function circlesHtml(m, onlyOpen){
+  var c = calc(); if (!c.circles) return '';
+  var list = c.circles.filter(function(x){ return x.day.slice(0, 7) === m && (!onlyOpen || (!x.done && !(PS.set.closed || {})[x.day])); }).slice().reverse();
+  var mode = '<div class="seg" style="--n:2;margin-bottom:10px"><span class="ind" style="--idx:' + (circMode() ? 0 : 1) + '"></span><button data-pact="mcirc" aria-pressed="' + circMode() + '">Кола</button><button data-pact="mavg" aria-pressed="' + !circMode() + '">Средняя цена</button></div>';
+  if (onlyOpen && !list.length) return '';
+  var rest = c.rest && c.rest.q > 0.01 ? '<div class="cs" style="margin-top:8px">Запас (куплено, ещё не влезло в коло): ' + usdtS(c.rest.q) + ' по ' + price(c.rest.avg) + '</div>' : '';
+  return '<section class="card"><h2>' + (onlyOpen ? 'Незакрытые кола' : 'Кола') + '</h2>' + (onlyOpen ? '' : mode) + (list.length ? list.slice(0, onlyOpen ? 5 : 40).map(circleCard).join('') : '<div class="empty">Продаж в этом месяце нет.</div>') + rest +
+    (onlyOpen ? '' : '<p class="note" style="margin-bottom:0">Каждый день с продажами — своё коло. Покупки доливают сначала самое старое незакрытое коло, потом сегодняшнее. Профит продажи = продано × (её цена − средняя покупок её кола). Новый месяц — новые кола.</p>') + '</section>';
+}
 function warnHtml(list){
+  if (circMode()) return circWarn(list);
   var over = list.filter(function(g){ return g.over > 0 || g.noCost; });
   if (!over.length || startBal()) return '';
   return '<div class="warn"><span><b>Продано больше, чем куплено</b> в ' + over.length + ' ' + plural(over.length, 'дне', 'днях', 'днях') + '. Похоже, до начала истории у тебя уже был остаток USDT. Укажи его, и профит этих дней станет точнее.</span><button data-pact="start">Указать остаток</button></div>';
@@ -3529,6 +3628,7 @@ function vHome(){
     '<div class="hmain">' + (dg ? goalBar(g.profit, dg, 'gd') + '<div class="hsub" style="margin-top:0">' + (g.profit >= dg ? 'Цель дня выполнена: ' + moneyS(dg) : 'Цель дня ' + moneyS(dg) + ' · осталось ' + moneyS(dg - g.profit)) + (G.day ? '' : ' (из цели месяца)') + '</div>' : '<button class="hsub" data-pact="goals" style="text-align:left;text-decoration:underline;text-underline-offset:3px;margin:0">Поставить цель на день</button>') +
     (g.fee ? '<div class="hsub" style="margin-top:0">Комиссии банков сегодня −' + moneyS(g.fee) + ' (уже вычтены)</div>' : '') + '<div class="hrow3"><div><small>Спред</small><b>' + (g.spread !== null ? price(g.spread) + ' ₴' : '—') + '</b></div><div><small>Спред %</small><b>' + pct(g.spreadPct) + '</b></div><div><small>Продано</small><b>' + usdtS(g.sQ) + '</b></div><div><small>Ордеров</small><b>' + g.n + '</b></div></div></div></section>';
   h += warnHtml(daysOfMonth(m).concat(c.byDay[td] ? [] : []));
+  if (circMode()) h += circlesHtml(m, true);
   // месяц
   var mf = monthFracK(m), left = daysIn(m) - +td.slice(8, 10) + 1;
   h += '<section class="card" data-pact="goals" style="cursor:pointer"><h2>' + esc(cap(monthName(m))) + '<span style="color:var(--accent);letter-spacing:0;text-transform:none;font-size:12.5px">' + (G.month ? 'Изменить цель' : 'Поставить цель') + '</span></h2>' +
@@ -3620,6 +3720,7 @@ function vStats(){
     '<div class="kpi"><small>Лучший день</small><b class="pos">' + (ms.best ? signed(ms.best.profit, true) : '—') + '</b><em>' + (ms.best ? shortDate(ms.best.day) : '') + '</em></div>' +
     '<div class="kpi"><small>Худший день</small><b class="' + (ms.worst ? pnlCls(ms.worst.profit) : '') + '">' + (ms.worst ? signed(ms.worst.profit, true) : '—') + '</b><em>' + (ms.worst ? shortDate(ms.worst.day) : '') + '</em></div></div>';
   h += warnHtml(days);
+  h += circMode() ? circlesHtml(m) : '<section class="card"><h2>Как считать</h2><div class="seg" style="--n:2"><span class="ind" style="--idx:1"></span><button data-pact="mcirc" aria-pressed="false">Кола</button><button data-pact="mavg" aria-pressed="true">Средняя цена</button></div></section>';
   if (!days.length) return h + '<section class="card"><div class="empty">За ' + esc(monthLabel(m).toLowerCase()) + ' сделок нет.</div></section>';
   // профит по дням
   var dflt = days[days.length - 1];
@@ -3894,6 +3995,8 @@ function click(e){
   if (t.hasAttribute('data-debt')){ openDebt(t.getAttribute('data-debt')); return true; }
   var a = t.getAttribute('data-pact');
   if (a === 'newdebt'){ openDebt(null); return true; }
+  if (a === 'mcirc' || a === 'mavg'){ PS.set.mode = a === 'mcirc' ? 'circles' : 'avg'; store.setPSettings({mode:PS.set.mode}).catch(dbErr); CALC = null; toast(a === 'mcirc' ? 'Профит по колам' : 'Профит по средней цене'); rr(); return true; }
+  if (a === 'cclose' || a === 'copen'){ var cd = t.getAttribute('data-cday'), cl = Object.assign({}, PS.set.closed || {}); if (a === 'cclose') cl[cd] = Date.now(); else delete cl[cd]; PS.set.closed = cl; store.setPSettings({closed:cl}).catch(dbErr); CALC = null; toast(a === 'cclose' ? 'Коло закрыто: новые покупки в него не пойдут' : 'Коло снова открыто'); rr(); return true; }
   if (a === 'grpcfg'){ openGrp(); return true; }
   if (a === 'goals'){ openGoals(); return true; }
   if (a === 'start'){ openStart(); return true; }
